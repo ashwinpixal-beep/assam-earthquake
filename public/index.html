@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Explore 13.3 million real building footprints across Assam in 3D, and get a damage-grade prediction for any building.">
+  <title>Assam in 3D · Building damage model</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%2314213d'/%3E%3Crect x='3' y='6' width='4' height='7' fill='%23d69e2e'/%3E%3Crect x='9' y='3' width='4' height='10' fill='%23d69e2e'/%3E%3C/svg%3E">
+  <style>
+    :root { --ink:#1c2530; --ink2:#3b4856; --muted:#6b7785; --line:#dfe5ec; --navy:#14213d; --navy2:#1f3358; --amber:#b7791f; --gold:#d69e2e; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; overflow: hidden; background: #e9edf2; color: var(--ink); font: 14px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+    button { font: inherit; }
+    :focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+    /* layout: map on the left, building sheet on the right (the map resizes, nothing is covered) */
+    .app { position: fixed; top: 0; left: 0; right: 0; bottom: 0; display: grid; grid-template-columns: minmax(0, 1fr) 0; transition: grid-template-columns .35s cubic-bezier(.2,.8,.2,1); }
+    .app.open { grid-template-columns: minmax(0, 1fr) 430px; }
+    #stage { position: relative; min-width: 0; min-height: 0; overflow: hidden; background: #dfe8ef; }
+    #scene { position: absolute; inset: 0; }
+    #scene canvas { display: block; width: 100%; height: 100%; cursor: crosshair; }
+
+    .card { position: absolute; background: rgba(255,255,255,.94); backdrop-filter: blur(8px); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 10px 30px rgba(20,33,61,.12); }
+
+    /* loader */
+    #loader { position: absolute; inset: 0; z-index: 5; display: grid; place-items: center; background: linear-gradient(135deg, #14213d, #1f3358); transition: opacity .7s ease, visibility .7s; }
+    #loader.done { opacity: 0; visibility: hidden; }
+    .lcard { width: min(360px, 80vw); color: #fff; text-align: center; }
+    .ltitle { font: 700 26px Georgia, "Times New Roman", serif; margin-bottom: 14px; }
+    .lbar { height: 6px; background: rgba(255,255,255,.18); border-radius: 4px; overflow: hidden; }
+    .lbar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--gold), #f6d28a); border-radius: 4px; transition: width .4s ease; }
+    .lsub { margin-top: 12px; font-size: 13px; color: rgba(255,255,255,.75); }
+
+    /* overview card */
+    #info { top: 14px; left: 14px; width: 300px; max-width: calc(100% - 28px); padding: 16px 18px; }
+    #info h1 { margin: 0; font: 700 19px Georgia, "Times New Roman", serif; color: var(--navy); }
+    #info .sub { margin: 4px 0 0; font-size: 13px; color: var(--ink2); }
+    /* page switcher */
+    .pagenav { display: flex; gap: 6px; margin: 10px 0 0; }
+    .pagenav a { flex: 1; text-align: center; text-decoration: none; font-size: 12.5px; font-weight: 600; color: var(--navy); border: 1px solid #d3dbe5; border-radius: 8px; padding: 6px 8px; background: #fff; transition: background .2s, border-color .2s, color .2s; }
+    .pagenav a:hover { border-color: var(--navy); background: #f4f7fb; }
+    .pagenav a.on { background: var(--navy); border-color: var(--navy); color: #fff; }
+
+    .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 12px 0 4px; }
+    .stats div { background: #f4f7fb; border-radius: 9px; padding: 8px 10px; }
+    .stats b { display: block; font: 700 16px Georgia, serif; color: var(--navy); font-variant-numeric: tabular-nums; }
+    .stats span { display: block; font-size: 11.5px; color: var(--muted); line-height: 1.3; }
+    details { margin-top: 10px; font-size: 12.5px; color: var(--ink2); }
+    details summary { cursor: pointer; font-weight: 600; color: var(--navy); }
+    details p { margin: 8px 0 0; }
+    .attr { color: var(--muted); font-size: 11.5px; }
+
+    /* legend */
+    #legend { bottom: 60px; left: 14px; width: 210px; padding: 12px 14px; font-size: 12px; color: var(--ink2); }
+    .lg-title { font-weight: 700; color: var(--navy); margin-bottom: 6px; }
+    .sw { display: block; height: 10px; border-radius: 5px; }
+    .sw + .sw { margin-top: 8px; }
+    .lg-row { margin-top: 2px; }
+    .lg-cap { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-top: 3px; }
+
+    /* status pill */
+    #status { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); padding: 6px 12px; border-radius: 999px; font-size: 12.5px; color: var(--ink2); background: rgba(255,255,255,.94); border: 1px solid var(--line); box-shadow: 0 4px 14px rgba(20,33,61,.08); max-width: calc(100% - 28px); }
+
+    /* city dock */
+    #dock { bottom: 14px; left: 50%; transform: translateX(-50%); width: max-content; max-width: calc(100% - 28px); display: flex; gap: 6px; padding: 6px; flex-wrap: nowrap; overflow-x: auto; }
+    .city { flex: none; border: 1px solid #d3dbe5; background: #fff; color: var(--navy); border-radius: 9px; padding: 7px 12px; font-size: 13px; font-weight: 600; cursor: pointer; transition: background .2s, border-color .2s, color .2s; }
+    .city:hover { border-color: var(--navy); }
+    .city.on { background: var(--navy); border-color: var(--navy); color: #fff; }
+    .city.ghost { background: #f4f7fb; }
+
+    /* floating label above the selected building */
+    #label { position: absolute; left: 0; top: 0; z-index: 3; pointer-events: none; display: inline-flex; align-items: center; gap: 7px; padding: 6px 11px; border-radius: 999px; background: var(--navy); color: #fff; font-size: 12.5px; white-space: nowrap; box-shadow: 0 6px 18px rgba(20,33,61,.25); transition: opacity .2s; will-change: transform; }
+    #label[hidden] { display: none; }
+    #label .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--c, #7a8699); box-shadow: 0 0 0 2px rgba(255,255,255,.35); transition: background .4s; }
+    #label::after { content: ""; position: absolute; left: 50%; bottom: -6px; width: 10px; height: 10px; background: var(--navy); transform: translateX(-50%) rotate(45deg); }
+
+    /* building sheet */
+    #bpanel, #epanel { background: #fff; border-left: 1px solid var(--line); overflow-y: auto; padding: 18px 20px 26px; min-width: 0; }
+    #bpanel[hidden], #epanel[hidden] { display: none; }
+    .cta { position: absolute; top: 14px; right: 14px; z-index: 4; border: 0; border-radius: 10px; padding: 11px 16px; background: var(--amber); color: #fff; font-weight: 700; font-size: 14px; cursor: pointer; box-shadow: 0 8px 22px rgba(183,121,31,.35); transition: background .2s, transform .2s; }
+    .cta:hover { background: #9a6517; transform: translateY(-1px); }
+    #reset-view.on { background: var(--navy); border-color: var(--navy); color: #fff; }
+    #epanel header { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+    #epanel h2 { margin: 2px 0 0; font: 700 20px Georgia, "Times New Roman", serif; color: var(--navy); }
+    .lede { font-size: 13px; color: var(--ink2); margin: 10px 0 0; }
+    .ctrl { display: flex; align-items: center; gap: 10px; margin: 14px 0 6px; }
+    .ctrl label { font-size: 13px; color: var(--ink2); display: flex; align-items: center; gap: 6px; }
+    .ctrl select { font: inherit; padding: 6px 8px; border-radius: 8px; border: 1px solid #cfd7e1; background: #fff; }
+    .btn { font: 600 13px system-ui, sans-serif; color: #fff; background: var(--navy); border: 0; border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+    .btn:hover { background: var(--navy2); }
+    .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 10px 0; }
+    .cards div { background: #f4f7fb; border-radius: 9px; padding: 9px 10px; min-width: 0; }
+    .cards b { display: block; font: 700 17px Georgia, serif; color: var(--navy); font-variant-numeric: tabular-nums; }
+    .cards span { font-size: 11.5px; color: var(--muted); line-height: 1.3; display: block; }
+    .cards .hi { background: #fdf3e1; }
+    #epanel h3 { font: 700 14px Georgia, serif; color: var(--navy); margin: 16px 0 6px; }
+    .enote { font-size: 12.5px; color: var(--ink2); margin: 4px 0 0; min-height: 1.4em; }
+    table.cm { border-collapse: collapse; font-size: 13px; width: 100%; }
+    table.cm th, table.cm td { border: 1px solid var(--line); padding: 6px 8px; text-align: center; font-variant-numeric: tabular-nums; }
+    table.cm th { background: #f4f7fb; font-weight: 600; color: var(--navy); }
+    table.cm td.diag { background: #e6f4ec; font-weight: 700; color: #1f6b43; }
+    .tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 9px; max-height: 340px; }
+    table.rows { border-collapse: collapse; font-size: 12px; width: 100%; }
+    table.rows th, table.rows td { padding: 6px 5px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: middle; }
+    table.rows th { white-space: nowrap; }
+    table.rows th { position: sticky; top: 0; background: #f4f7fb; color: var(--navy); font-weight: 600; z-index: 1; }
+    table.rows td.ok { color: #1f6b43; font-weight: 700; }
+    table.rows td.miss { color: #a52a2a; font-weight: 700; }
+    .grade { display: inline-block; min-width: 22px; text-align: center; border-radius: 6px; color: #fff; padding: 1px 6px; font-weight: 700; }
+    .grade { color: #fff; }
+    #bpanel header { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+    .eyebrow { font-size: 11px; letter-spacing: .8px; text-transform: uppercase; color: var(--amber); font-weight: 700; }
+    #bpanel h2 { margin: 2px 0 0; font: 700 20px Georgia, "Times New Roman", serif; color: var(--navy); }
+    .x { border: 1px solid var(--line); background: #fff; width: 32px; height: 32px; border-radius: 8px; font-size: 18px; line-height: 1; cursor: pointer; color: var(--ink2); flex: none; }
+    .x:hover { border-color: var(--navy); color: var(--navy); }
+    .facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 14px 0; }
+    .facts div { background: #f4f7fb; border-radius: 9px; padding: 8px 9px; min-width: 0; }
+    .facts b { display: block; font-size: 13.5px; color: var(--navy); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+    .facts span { font-size: 11px; color: var(--muted); }
+    .pmsg { grid-column: 1 / -1; margin: 0; color: var(--ink2); }
+    .badge { border-radius: 12px; padding: 14px 16px; color: #fff; background: #7a8699; transition: background .45s ease; }
+    .badge[hidden] { display: none; }
+    .badge .k { font-size: 11.5px; opacity: .92; letter-spacing: .4px; text-transform: uppercase; }
+    .badge .v { font: 700 21px Georgia, "Times New Roman", serif; line-height: 1.2; margin-top: 3px; }
+    #bbars { margin-top: 10px; }
+    #inputs { margin-top: 16px; font-size: 14px; color: var(--ink); }
+    #inputs summary { font: 700 15px Georgia, "Times New Roman", serif; color: var(--navy); padding: 6px 0; cursor: pointer; }
+    #inputs[hidden] { display: none; }
+    .note { font-size: 12.5px; color: var(--muted); margin: 0 0 6px; }
+    .fine { font-size: 11.5px; color: var(--muted); margin: 14px 0 0; border-top: 1px solid var(--line); padding-top: 10px; }
+
+    /* mobile: the building sheet becomes a bottom sheet over the map */
+    @media (max-width: 760px) {
+      .app.open { grid-template-columns: minmax(0, 1fr); }
+      #bpanel, #epanel { position: absolute; left: 0; right: 0; bottom: 0; height: 66%; border-left: 0; border-top: 1px solid var(--line); border-radius: 16px 16px 0 0; box-shadow: 0 -10px 30px rgba(20,33,61,.18); z-index: 6; }
+      #info { width: auto; right: 14px; }
+      #info details, #info .sub { display: none; }
+      .cta { top: auto; bottom: 14px; right: 14px; }
+      .cards { grid-template-columns: 1fr 1fr 1fr; }
+      #info h1 { font-size: 17px; }
+      #legend { display: none; }
+      #dock { bottom: 10px; }
+      #status { top: auto; bottom: 66px; left: 14px; right: 14px; text-align: center; }
+    }
+    @media (max-width: 760px) and (min-height: 0) {
+      .app.open #dock { display: none; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { transition-duration: 0ms !important; animation-duration: 0ms !important; }
+    }
+  </style>
+  <script type="importmap">{ "imports": { "three": "/static/assam3d/vendor/three.module.js" } }</script>
+  <style id="shared-css"></style>
+</head>
+<body>
+
+
+<div class="app" id="app">
+  <main id="stage">
+    <div id="scene"></div>
+
+    <div id="loader" role="status" aria-live="polite">
+      <div class="lcard">
+        <div class="ltitle">Assam in 3D</div>
+        <div class="lbar"><i id="loadbar"></i></div>
+        <div class="lsub" id="loadtext">Starting…</div>
+      </div>
+    </div>
+
+    <button id="example-btn" class="cta" type="button" aria-controls="epanel" aria-expanded="false">Example: test the model</button>
+
+    <section id="info" class="card" aria-label="About this map">
+      <h1>Assam in 3D</h1>
+      <nav class="pagenav" aria-label="Pages">
+        <a href="/" class="on" aria-current="page">3D map</a>
+        <a href="/2d">2D hazard</a>
+        <a href="/docs">API docs</a>
+      </nav>
+      <p class="sub">Real building footprints from Overture Maps, drawn at their recorded or estimated height. Click any building to see its predicted damage grade and class probabilities.</p>
+      <div class="stats">
+        <div><b id="st-total">–</b><span>buildings in Assam</span></div>
+        <div><b id="st-est">–</b><span>heights estimated</span></div>
+        <div><b id="st-tiles">0</b><span>detail tiles in view</span></div>
+        <div><b id="st-tiles-all">–</b><span>tiles, 0.1° each</span></div>
+      </div>
+      <details>
+        <summary>About the data and its limits</summary>
+        <p>Footprints carry no survey attributes, and the dataset has no coordinates. So the predicted grade depends on the inputs in the panel, not on the building's shape or position. Use this map to explore scenarios, not to assess a real building.</p>
+        <p>Heights are the 4 m estimated default unless the source records a height. Only 77 buildings have a recorded height.</p>
+        <p class="attr">Building footprints © Overture Maps Foundation, released under ODbL. Boundary: Overture divisions (IN-AS). Model: damage-model-v1 (LightGBM and XGBoost ensemble), trained on the 2015 Gorkha survey.</p>
+      </details>
+    </section>
+
+    <div id="legend" class="card" aria-label="Legend">
+      <div class="lg-title">Building height</div>
+      <i class="sw" style="background:linear-gradient(90deg,#cfd8e3,#2f4d6b)"></i>
+      <div class="lg-cap"><span>0 m</span><span>30 m +</span></div>
+      <i class="sw" style="background:linear-gradient(90deg,#f0c77a,#a0622a)"></i>
+      <div class="lg-cap"><span>estimated</span><span>measured</span></div>
+      <div class="lg-cap" style="margin-top:6px"><span>After a click, the selected building takes its predicted grade colour.</span></div>
+    </div>
+
+    <div id="dock" class="card" role="toolbar" aria-label="Jump to a city">
+      <button class="city" data-lat="26.1445" data-lon="91.7362">Guwahati</button>
+      <button class="city" data-lat="27.4728" data-lon="94.9120">Dibrugarh</button>
+      <button class="city" data-lat="26.7509" data-lon="94.2037">Jorhat</button>
+      <button class="city" data-lat="26.6338" data-lon="92.7936">Tezpur</button>
+      <button class="city" data-lat="24.8333" data-lon="92.7789">Silchar</button>
+      <button class="city ghost" id="reset-view">Whole state</button>
+    </div>
+
+    <div id="status" role="status" aria-live="polite">Starting…</div>
+    <div id="label" hidden><span class="dot"></span><b id="label-v">Predicting…</b></div>
+  </main>
+
+  <aside id="bpanel" hidden aria-label="Selected building">
+    <header>
+      <div>
+        <div class="eyebrow">Building</div>
+        <h2 id="btitle">Selected building</h2>
+      </div>
+      <button class="x" id="bclose" aria-label="Close panel">×</button>
+    </header>
+    <div id="bfacts" class="facts"></div>
+    <div class="badge" id="bbadge" hidden>
+      <div class="k">Predicted damage grade <span class="spin" id="bspin"></span></div>
+      <div class="v" id="bbadge-v">Calculating…</div>
+    </div>
+    <div id="bbars"></div>
+    <details id="inputs" open>
+      <summary>Model inputs</summary>
+      <p class="note">Change an input and the grade updates after a short pause. The building takes its colour from the grade.</p>
+      <div id="bform"></div>
+    </details>
+    <p class="fine">Statistical estimate from 2015 Gorkha survey records. It is not a structural assessment or a safety certificate. Use a qualified engineer for decisions.</p>
+  </aside>
+  <aside id="epanel" hidden aria-label="Model check against real records">
+    <header>
+      <div>
+        <div class="eyebrow">Example</div>
+        <h2>Model vs real data</h2>
+      </div>
+      <button class="x" id="eclose" aria-label="Close panel">×</button>
+    </header>
+    <p class="lede">The model predicts the damage grade for real survey records from the held-out test split. The model never saw these during training. Each prediction is then checked against the grade the survey recorded.</p>
+    <div class="ctrl">
+      <label>Records <select id="e-n" aria-label="Number of records">
+        <option value="20">20</option><option value="30" selected>30</option><option value="50">50</option><option value="100">100</option>
+      </select></label>
+      <button class="btn" id="e-new" type="button">New sample</button>
+    </div>
+    <div class="cards">
+      <div class="hi"><b id="e-acc">–</b><span>accuracy on this sample</span></div>
+      <div><b id="e-full">–</b><span>accuracy on all held-out records</span></div>
+      <div><b id="e-maj">–</b><span>baseline: always guess grade 2</span></div>
+    </div>
+    <p class="enote" id="e-status" role="status" aria-live="polite"></p>
+    <h3>Confusion matrix</h3>
+    <table class="cm" id="e-cm" aria-label="Confusion matrix: real grade by predicted grade"></table>
+    <h3>Records</h3>
+    <div class="tablewrap"><table class="rows" id="e-rows" aria-label="Predicted and real grade per record"></table></div>
+    <p class="fine" id="e-note"></p>
+  </aside>
+</div>
+
+<script type="module" src="/static/assam3d/viewer.js"></script>
+</body>
+</html>

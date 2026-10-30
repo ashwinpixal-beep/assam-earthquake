@@ -1,0 +1,9 @@
+# Runtime requirements for the web app (pinned to the versions used to train and test the model)
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+numpy
+pandas==2.2.3
+scikit-learn==1.6.1
+lightgbm==4.7.0
+xgboost==3.4.1
+joblib

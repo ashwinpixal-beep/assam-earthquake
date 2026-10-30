@@ -1,0 +1,334 @@
+{
+  "protocol": "stratified 80/20 split, seed 42; all choices by CV on train only",
+  "rows_total": 260601,
+  "rows_train": 208480,
+  "rows_test": 52121,
+  "class_distribution": {
+    "1": 25124,
+    "2": 148259,
+    "3": 87218
+  },
+  "results": {
+    "baseline_naive_bayes": {
+      "config": {
+        "n_bins": 5,
+        "alpha": 1.0,
+        "balance": null,
+        "n_features": 38
+      },
+      "test": {
+        "accuracy": 0.6985092381189923,
+        "macro_f1": 0.6623859349876983,
+        "weighted_f1": 0.7026130936761384,
+        "balanced_accuracy": 0.6986750258017237,
+        "per_class": {
+          "1": {
+            "precision": 0.46936852026390197,
+            "recall": 0.6937313432835821,
+            "f1": 0.5599100546097012
+          },
+          "2": {
+            "precision": 0.7709943714821763,
+            "recall": 0.6929380817482801,
+            "f1": 0.729885261624809
+          },
+          "3": {
+            "precision": 0.685768122367546,
+            "recall": 0.7093556523733089,
+            "f1": 0.6973624887285843
+          }
+        },
+        "confusion_matrix": [
+          [
+            3486,
+            1447,
+            92
+          ],
+          [
+            3527,
+            20547,
+            5578
+          ],
+          [
+            414,
+            4656,
+            12374
+          ]
+        ]
+      }
+    },
+    "plus_feature_selection": {
+      "config": {
+        "n_features": 15,
+        "selected": [
+          "land_surface_condition",
+          "height_percentage",
+          "area_percentage",
+          "roof_type",
+          "other_floor_type",
+          "has_superstructure_stone_flag",
+          "position",
+          "ground_floor_type",
+          "has_superstructure_timber",
+          "geo_level_2_id",
+          "geo_level_1_id",
+          "has_superstructure_other",
+          "has_superstructure_rc_engineered",
+          "count_floors_pre_eq",
+          "geo_level_3_id"
+        ]
+      },
+      "test": {
+        "accuracy": 0.7020970434182,
+        "macro_f1": 0.6624423976713426,
+        "weighted_f1": 0.7057856500676654,
+        "balanced_accuracy": 0.6923014318794135,
+        "per_class": {
+          "1": {
+            "precision": 0.47355092853123243,
+            "recall": 0.6698507462686567,
+            "f1": 0.5548504079782411
+          },
+          "2": {
+            "precision": 0.7668896807504909,
+            "recall": 0.7112842304060434,
+            "f1": 0.7380410819890122
+          },
+          "3": {
+            "precision": 0.6931071897664325,
+            "recall": 0.6957693189635404,
+            "f1": 0.6944357030467744
+          }
+        },
+        "confusion_matrix": [
+          [
+            3366,
+            1541,
+            118
+          ],
+          [
+            3305,
+            21091,
+            5256
+          ],
+          [
+            437,
+            4870,
+            12137
+          ]
+        ]
+      }
+    },
+    "improved_naive_bayes": {
+      "config": {
+        "n_features": 15,
+        "n_bins": 3,
+        "alpha": 0.1,
+        "balance": "none",
+        "grid": [
+          {
+            "n_bins": 3,
+            "alpha": 0.1,
+            "balance": "none",
+            "cv_macro_f1": 0.6595401698031119
+          },
+          {
+            "n_bins": 3,
+            "alpha": 0.1,
+            "balance": "ros",
+            "cv_macro_f1": 0.6360317240912614
+          },
+          {
+            "n_bins": 3,
+            "alpha": 0.1,
+            "balance": "uniform_prior",
+            "cv_macro_f1": 0.6335252922428977
+          },
+          {
+            "n_bins": 3,
+            "alpha": 1.0,
+            "balance": "none",
+            "cv_macro_f1": 0.6570385846471284
+          },
+          {
+            "n_bins": 3,
+            "alpha": 1.0,
+            "balance": "ros",
+            "cv_macro_f1": 0.6331838493442487
+          },
+          {
+            "n_bins": 3,
+            "alpha": 1.0,
+            "balance": "uniform_prior",
+            "cv_macro_f1": 0.6288033994816068
+          },
+          {
+            "n_bins": 5,
+            "alpha": 0.1,
+            "balance": "none",
+            "cv_macro_f1": 0.6579912068798389
+          },
+          {
+            "n_bins": 5,
+            "alpha": 0.1,
+            "balance": "ros",
+            "cv_macro_f1": 0.6354916697629726
+          },
+          {
+            "n_bins": 5,
+            "alpha": 0.1,
+            "balance": "uniform_prior",
+            "cv_macro_f1": 0.6324124387301803
+          },
+          {
+            "n_bins": 5,
+            "alpha": 1.0,
+            "balance": "none",
+            "cv_macro_f1": 0.6541712100054436
+          },
+          {
+            "n_bins": 5,
+            "alpha": 1.0,
+            "balance": "ros",
+            "cv_macro_f1": 0.6318447157885574
+          },
+          {
+            "n_bins": 5,
+            "alpha": 1.0,
+            "balance": "uniform_prior",
+            "cv_macro_f1": 0.626726847464604
+          },
+          {
+            "n_bins": 8,
+            "alpha": 0.1,
+            "balance": "none",
+            "cv_macro_f1": 0.658099688448583
+          },
+          {
+            "n_bins": 8,
+            "alpha": 0.1,
+            "balance": "ros",
+            "cv_macro_f1": 0.6356358359734734
+          },
+          {
+            "n_bins": 8,
+            "alpha": 0.1,
+            "balance": "uniform_prior",
+            "cv_macro_f1": 0.6325435382729153
+          },
+          {
+            "n_bins": 8,
+            "alpha": 1.0,
+            "balance": "none",
+            "cv_macro_f1": 0.6541619947496261
+          },
+          {
+            "n_bins": 8,
+            "alpha": 1.0,
+            "balance": "ros",
+            "cv_macro_f1": 0.63183879397763
+          },
+          {
+            "n_bins": 8,
+            "alpha": 1.0,
+            "balance": "uniform_prior",
+            "cv_macro_f1": 0.6270881916913643
+          }
+        ]
+      },
+      "test": {
+        "accuracy": 0.7037854223825329,
+        "macro_f1": 0.667111422024458,
+        "weighted_f1": 0.7074956766937355,
+        "balanced_accuracy": 0.7000747777956571,
+        "per_class": {
+          "1": {
+            "precision": 0.48091286307053943,
+            "recall": 0.6919402985074626,
+            "f1": 0.5674418604651162
+          },
+          "2": {
+            "precision": 0.7713771046246599,
+            "recall": 0.7076419803048698,
+            "f1": 0.7381362788897878
+          },
+          "3": {
+            "precision": 0.6909378709932726,
+            "recall": 0.7006420545746388,
+            "f1": 0.6957561267184699
+          }
+        },
+        "confusion_matrix": [
+          [
+            3477,
+            1415,
+            133
+          ],
+          [
+            3335,
+            20983,
+            5334
+          ],
+          [
+            418,
+            4804,
+            12222
+          ]
+        ]
+      }
+    }
+  },
+  "comparison": {
+    "baseline_accuracy": 0.6985092381189923,
+    "improved_accuracy": 0.7037854223825329,
+    "baseline_macro_f1": 0.6623859349876983,
+    "improved_macro_f1": 0.667111422024458,
+    "delta_macro_f1": 0.004725487036759679,
+    "base_paper_P4": {
+      "model": "SMOTE-XGBoost (Chen & Zhang 2022, P4)",
+      "macro_f1": 0.729
+    },
+    "note": "P4 used XGBoost with its own split/preprocessing; compare as a reference, not a controlled test."
+  },
+  "mutual_information": {
+    "geo_level_1_id": 0.01735,
+    "geo_level_2_id": 0.02894,
+    "geo_level_3_id": 0.00795,
+    "count_floors_pre_eq": 0.01214,
+    "age": 0.00287,
+    "area_percentage": 0.13061,
+    "height_percentage": 0.24017,
+    "land_surface_condition": 0.33954,
+    "foundation_type": 0.00089,
+    "roof_type": 0.07088,
+    "ground_floor_type": 0.04043,
+    "other_floor_type": 0.05353,
+    "position": 0.04761,
+    "plan_configuration": 0.00206,
+    "has_superstructure_adobe_mud": 0.00326,
+    "has_superstructure_mud_mortar_stone": 0.00377,
+    "has_superstructure_stone_flag": 0.04897,
+    "has_superstructure_cement_mortar_stone": 0.00244,
+    "has_superstructure_mud_mortar_brick": 0.00214,
+    "has_superstructure_cement_mortar_brick": 0.00236,
+    "has_superstructure_timber": 0.03224,
+    "has_superstructure_bamboo": 0.00262,
+    "has_superstructure_rc_non_engineered": 0.00211,
+    "has_superstructure_rc_engineered": 0.01269,
+    "has_superstructure_other": 0.01617,
+    "legal_ownership_status": 0.00054,
+    "count_families": 0.00398,
+    "has_secondary_use": 0.00319,
+    "has_secondary_use_agriculture": 0.00122,
+    "has_secondary_use_hotel": 0.00483,
+    "has_secondary_use_rental": 0.00349,
+    "has_secondary_use_institution": 0.00041,
+    "has_secondary_use_school": 8e-05,
+    "has_secondary_use_industry": 7e-05,
+    "has_secondary_use_health_post": 4e-05,
+    "has_secondary_use_gov_office": 5e-05,
+    "has_secondary_use_use_police": 0.0,
+    "has_secondary_use_other": 0.00012
+  },
+  "elapsed_sec": 91.3
+}

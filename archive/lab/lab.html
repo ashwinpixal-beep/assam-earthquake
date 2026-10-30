@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Building lab · Damage model in 3D</title>
+  <meta name="description" content="Shape a building and watch the damage model predict its grade in 3D.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%2314213d'/%3E%3Crect x='3' y='6' width='4' height='7' fill='%23d69e2e'/%3E%3Crect x='9' y='3' width='4' height='10' fill='%23d69e2e'/%3E%3C/svg%3E">
+  <style>
+    :root { --ink:#1c2530; --ink2:#3b4856; --muted:#6b7785; --navy:#14213d; --amber:#b7791f; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; font: 14px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; color: var(--ink); background: #e9edf2; overflow: hidden; }
+    .layout { position: fixed; top: 56px; left: 0; right: 0; bottom: 0; display: grid; grid-template-columns: 1fr 380px; }
+    #stage { position: relative; min-width: 0; overflow: hidden; }
+    #stage canvas { display: block; width: 100%; height: 100%; }
+    #hud { position: absolute; left: 14px; top: 12px; right: 14px; display: flex; justify-content: space-between; gap: 10px; pointer-events: none; }
+    .hud-card { background: rgba(255,255,255,.92); border: 1px solid #d5dde6; border-radius: 10px; padding: 9px 12px; box-shadow: 0 4px 16px rgba(20,33,61,.1); pointer-events: auto; max-width: 430px; }
+    .hud-card h1 { margin: 0; font: 700 17px Georgia, serif; color: var(--navy); }
+    .hud-card p { margin: 3px 0 0; color: var(--ink2); font-size: 12.5px; }
+    .btns { display: flex; gap: 6px; pointer-events: auto; }
+    .btns button { font: 600 12.5px system-ui, sans-serif; color: var(--navy); background: #fff; border: 1px solid #cfd7e1; border-radius: 7px; padding: 6px 11px; cursor: pointer; }
+    .btns button.on { background: var(--navy); color: #fff; border-color: var(--navy); }
+    #side { background: #fff; border-left: 1px solid #d5dde6; overflow-y: auto; padding: 16px 18px 26px; }
+    #side h2 { font: 700 17px Georgia, serif; color: var(--navy); margin: 0 0 4px; }
+    #side .lead { color: var(--ink2); font-size: 13px; margin: 0 0 6px; }
+    .result { border: 1px solid #dfe5ec; border-radius: 12px; padding: 12px 14px; margin: 8px 0 4px; background: #fbfcfe; }
+    .meta { font-size: 11.5px; color: var(--muted); margin-top: 8px; }
+    .disclaimer { font-size: 11.5px; color: var(--muted); border-top: 1px solid #e6ebf1; margin-top: 10px; padding-top: 8px; }
+    .visual-note { font-size: 12px; color: var(--muted); }
+    .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 3px; vertical-align: -1px; margin-right: 5px; border: 1px solid rgba(0,0,0,.12); }
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: 1fr; grid-template-rows: 58vh 1fr; }
+      #side { border-left: 0; border-top: 1px solid #d5dde6; }
+      .hud-card p { display: none; }
+    }
+  </style>
+  <script type="importmap">{ "imports": { "three": "/static/assam3d/vendor/three.module.js" } }</script>
+  <style id="shared-css"></style>
+</head>
+<body>
+<nav class="topnav" id="nav" aria-label="Site">
+  <a class="brand" href="/">BDG<span>·</span>Nepal</a>
+  <a href="/">Project</a>
+  <a href="/3d">Assam in 3D</a>
+  <a href="/lab" class="on" aria-current="page">Building lab</a>
+</nav>
+
+<div class="layout">
+  <div id="stage">
+    <div id="hud">
+      <div class="hud-card">
+        <h1>Building lab</h1>
+        <p>Shape a building on the right. The model predicts its damage grade as you change it, and the 3D building responds.</p>
+      </div>
+      <div class="btns">
+        <button id="rotate" class="on" type="button">Auto-rotate</button>
+        <button id="reset" type="button">Reset view</button>
+      </div>
+    </div>
+  </div>
+
+  <aside id="side">
+    <h2>Building</h2>
+    <p class="lead">Changes update the prediction after a short pause.</p>
+    <div class="result" id="result">
+      <div class="badge" id="badge" style="background:#7a8699"><div class="k">Predicted damage grade <span class="spin" id="spin"></span></div><div class="v" id="badge-v">Calculating…</div></div>
+      <div id="bars" style="margin-top:10px"></div>
+      <p class="visual-note" id="why"></p>
+      <p class="meta" id="modelline"></p>
+      <p class="disclaimer">Statistical estimate from the 2015 Gorkha survey records, not a structural assessment or a safety certificate. Use a qualified engineer for decisions.</p>
+    </div>
+    <div id="controls"></div>
+    <p class="visual-note">The 3D shape uses floors (about 3 m each) and the plinth setting for footprint width. Its colour follows the ticked materials. These are visual aids. Only the model inputs change the prediction.</p>
+  </aside>
+</div>
+
+<script type="module" src="/static/lab/lab.js"></script>
+</body>
+</html>

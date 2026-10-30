@@ -1,0 +1,114 @@
+{
+ "protocol": "stratified 80/20 split (seed 42); early stopping on 10% of the training split",
+ "rows_train": 208480,
+ "rows_test": 52121,
+ "models": [
+  {
+   "name": "Naive Bayes (baseline)",
+   "kind": "classical",
+   "note": "Mid-review setup: all 38 features, 5 quantile bins, \u03b1 = 1",
+   "accuracy": 0.6985,
+   "macro_f1": 0.6624,
+   "weighted_f1": 0.7026,
+   "balanced_accuracy": 0.6987,
+   "f1": {
+    "1": 0.5599,
+    "2": 0.7299,
+    "3": 0.6974
+   }
+  },
+  {
+   "name": "Naive Bayes (improved)",
+   "kind": "classical",
+   "note": "15 features (mutual information), 3 bins, \u03b1 = 0.1",
+   "accuracy": 0.7038,
+   "macro_f1": 0.6671,
+   "weighted_f1": 0.7075,
+   "balanced_accuracy": 0.7001,
+   "f1": {
+    "1": 0.5674,
+    "2": 0.7381,
+    "3": 0.6958
+   }
+  },
+  {
+   "name": "XGBoost",
+   "kind": "boosting",
+   "note": "Engineered features, early stopping",
+   "accuracy": 0.7502,
+   "macro_f1": 0.7005,
+   "weighted_f1": 0.7457,
+   "balanced_accuracy": 0.6778,
+   "f1": {
+    "1": 0.6053,
+    "2": 0.7965,
+    "3": 0.6998
+   }
+  },
+  {
+   "name": "LightGBM",
+   "kind": "boosting",
+   "note": "Engineered features, early stopping",
+   "accuracy": 0.7532,
+   "macro_f1": 0.7083,
+   "weighted_f1": 0.7498,
+   "balanced_accuracy": 0.6911,
+   "f1": {
+    "1": 0.622,
+    "2": 0.7976,
+    "3": 0.7053
+   }
+  },
+  {
+   "name": "LightGBM + XGBoost (final)",
+   "kind": "ensemble",
+   "note": "Average of class probabilities; shipped model",
+   "accuracy": 0.7568,
+   "macro_f1": 0.7099,
+   "weighted_f1": 0.7528,
+   "balanced_accuracy": 0.6888,
+   "f1": {
+    "1": 0.6197,
+    "2": 0.8013,
+    "3": 0.7087
+   }
+  }
+ ],
+ "reference": {
+  "name": "Base paper P4 (Chen & Zhang, 2022)",
+  "kind": "literature",
+  "note": "SMOTE-XGBoost on the same Nepal survey data; reported macro-F1 only, own split",
+  "macro_f1": 0.729
+ },
+ "final_confusion_matrix": [
+  [
+   2822,
+   2135,
+   68
+  ],
+  [
+   1148,
+   25196,
+   3308
+  ],
+  [
+   113,
+   5905,
+   11426
+  ]
+ ],
+ "class_names": {
+  "1": "Grade 1 \u00b7 low",
+  "2": "Grade 2 \u00b7 medium",
+  "3": "Grade 3 \u00b7 near-complete"
+ },
+ "class_distribution": {
+  "1": 0.0964,
+  "2": 0.5689,
+  "3": 0.3347
+ },
+ "leaderboard_context": {
+  "metric": "micro-F1 (equals accuracy for single-label classification)",
+  "range_reported": "about 0.74 to 0.76 for strong public entries"
+ }
+}

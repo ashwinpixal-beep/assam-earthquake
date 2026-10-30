@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="2D earthquake hazard map of Assam and the 2015 Gorkha damage table by anonymised area.">
+<title>Earthquake hazard · Assam</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%2314213d'/%3E%3Ccircle cx='8' cy='8' r='3' fill='%23d69e2e'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="/static/vendor/leaflet/leaflet.css">
+<style>
+  :root { --ink:#1c2530; --ink2:#3b4856; --muted:#6b7785; --line:#dfe5ec; --navy:#14213d; --navy2:#1f3358; --amber:#b7791f; --gold:#d69e2e; --red:#c53030; --yellow:#d69e2e; --green:#2f855a; }
+  * { box-sizing: border-box; }
+  html, body { margin:0; height:100%; }
+  body { background:#f6f8fb; color:var(--ink); font:14px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif; -webkit-font-smoothing:antialiased; }
+  :focus-visible { outline:2px solid var(--gold); outline-offset:2px; }
+
+  .shell { display:grid; grid-template-rows:auto minmax(0,1fr); height:100vh; }
+
+  /* header */
+  header { background:linear-gradient(135deg,var(--navy),var(--navy2)); color:#fff; padding:12px 20px; display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+  header h1 { margin:0; font:700 18px Georgia,"Times New Roman",serif; }
+  header .sub { color:rgba(255,255,255,.72); font-size:12.5px; margin-left:2px; }
+  nav { margin-left:auto; display:flex; gap:6px; }
+  nav a { color:#fff; text-decoration:none; border:1px solid rgba(255,255,255,.32); border-radius:9px; padding:6px 11px; font-size:13px; font-weight:600; }
+  nav a:hover { background:rgba(255,255,255,.13); }
+  nav a.on { background:var(--gold); border-color:var(--gold); color:#241c05; }
+
+  /* body: map + panel */
+  .body { display:grid; grid-template-columns:minmax(0,1fr) 400px; min-height:0; }
+  #mapwrap { position:relative; min-width:0; background:#e8eef5; }
+  #map { position:absolute; inset:0; background:#e8eef5; }
+  .leaflet-container { background:#e8eef5; font:inherit; }
+
+  .card { position:absolute; z-index:500; background:rgba(255,255,255,.95); backdrop-filter:blur(8px); border:1px solid var(--line); border-radius:13px; box-shadow:0 10px 28px rgba(20,33,61,.13); }
+  #legend { left:14px; bottom:14px; width:232px; padding:12px 14px; font-size:12px; color:var(--ink2); }
+  #legend .t { font-weight:700; color:var(--navy); margin-bottom:7px; font-size:12.5px; }
+  #legend .row { display:flex; align-items:center; gap:8px; margin-top:5px; }
+  #legend .sw { width:16px; height:12px; border-radius:3px; flex:none; }
+  #legend .lg-cap { display:flex; justify-content:space-between; font-size:11px; color:var(--muted); margin-top:8px; }
+  #legend hr { border:0; border-top:1px solid var(--line); margin:9px 0; }
+  #legend .ev { display:inline-block; width:9px; height:9px; border-radius:50%; background:var(--navy); opacity:.8; margin-right:7px; }
+
+  #tools { right:14px; top:14px; padding:8px; display:flex; gap:6px; }
+  .btn { border:1px solid #d3dbe5; background:#fff; color:var(--navy); border-radius:9px; padding:6px 11px; font-size:12.5px; font-weight:600; cursor:pointer; }
+  .btn:hover { border-color:var(--navy); }
+  .btn.on { background:var(--navy); border-color:var(--navy); color:#fff; }
+
+  #status { left:50%; top:14px; transform:translateX(-50%); padding:6px 13px; border-radius:999px; font-size:12.5px; color:var(--ink2); white-space:nowrap; }
+  #status[hidden] { display:none; }
+
+  /* side panel */
+  aside { border-left:1px solid var(--line); background:#fff; overflow-y:auto; min-width:0; }
+  .sec { padding:16px 18px; border-bottom:1px solid var(--line); }
+  .sec h2 { margin:0 0 4px; font:700 15px Georgia,serif; color:var(--navy); }
+  .sec .hint { margin:0 0 10px; font-size:12px; color:var(--muted); }
+  .stats { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .stats div { background:#f4f7fb; border-radius:9px; padding:8px 10px; }
+  .stats b { display:block; font:700 16px Georgia,serif; color:var(--navy); font-variant-numeric:tabular-nums; }
+  .stats span { display:block; font-size:11px; color:var(--muted); line-height:1.3; }
+
+  table { width:100%; border-collapse:collapse; font-size:12.5px; }
+  thead th { position:sticky; top:0; background:#eef3f9; color:var(--navy); text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.03em; padding:7px 6px; border-bottom:1px solid var(--line); cursor:pointer; white-space:nowrap; }
+  thead th:hover { background:#e3ebf5; }
+  tbody td { padding:6px; border-bottom:1px solid #eef1f5; font-variant-numeric:tabular-nums; }
+  tbody tr:hover { background:#f7fafd; }
+  tbody td.zone { width:14px; }
+  .dot { display:block; width:10px; height:10px; border-radius:50%; }
+  .zred { background:var(--red); } .zyellow { background:var(--yellow); } .zgreen { background:var(--green); }
+  .num { text-align:right; }
+  .tbl-wrap { max-height:340px; overflow:auto; border:1px solid var(--line); border-radius:10px; }
+  .note { font-size:11.5px; color:var(--muted); line-height:1.5; margin:10px 0 0; }
+  .pill { display:inline-block; font-size:10.5px; font-weight:700; letter-spacing:.03em; text-transform:uppercase; padding:2px 7px; border-radius:999px; }
+  .p-red { background:#fde8e8; color:#9b2c2c; } .p-yellow { background:#fdf3dd; color:#8a6212; } .p-green { background:#e6f6ec; color:#22683f; }
+  details summary { cursor:pointer; font-weight:600; color:var(--navy); font-size:12.5px; }
+  details p { font-size:12px; color:var(--ink2); }
+
+  .leaflet-popup-content { margin:10px 12px; font-size:12.5px; color:var(--ink); }
+  .leaflet-popup-content b { color:var(--navy); }
+
+  @media (max-width: 900px) {
+    .shell { height:auto; }
+    .body { grid-template-columns:1fr; grid-template-rows:minmax(320px,58vh) auto; }
+    aside { border-left:0; border-top:1px solid var(--line); }
+    #legend { width:200px; font-size:11.5px; }
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+  <header>
+    <h1>Earthquake hazard · Assam</h1>
+    <span class="sub">Relative ranking from the USGS M4+ catalogue, 2000–2026</span>
+    <nav>
+      <a href="/">3D map</a>
+      <a href="/2d" class="on" aria-current="page">2D hazard</a>
+      <a href="/docs">API docs</a>
+    </nav>
+  </header>
+
+  <div class="body">
+    <div id="mapwrap">
+      <div id="map" aria-label="Map of earthquake hazard cells and magnitude 5+ events"></div>
+
+      <div id="status" class="card">Loading hazard grid…</div>
+
+      <div id="tools" class="card">
+        <button class="btn" id="btnBasemap" type="button">Basemap</button>
+        <button class="btn on" id="btnEvents" type="button">M5+ events</button>
+        <button class="btn" id="btnFit" type="button">Reset view</button>
+      </div>
+
+      <div id="legend" class="card">
+        <div class="t">Relative hazard</div>
+        <div class="row"><span class="sw zred"></span><span>Red — top third of the score</span></div>
+        <div class="row"><span class="sw zyellow"></span><span>Yellow — middle third</span></div>
+        <div class="row"><span class="sw zgreen"></span><span>Green — bottom third</span></div>
+        <div class="row"><span class="sw" style="background:#dfe6ee"></span><span>Outside Assam (same thresholds)</span></div>
+        <hr>
+        <div><span class="ev"></span>M5.0–5.9 &nbsp; <span class="ev" style="width:13px;height:13px"></span>M6.0+</div>
+        <div class="lg-cap"><span>0.25° cells</span><span id="cellCount">—</span></div>
+      </div>
+    </div>
+
+    <aside>
+      <div class="sec">
+        <h2>Hazard layer</h2>
+        <p class="hint">Seismic energy of past events, smoothed and split into terciles.</p>
+        <div class="stats">
+          <div><b id="kEvents">—</b><span>M4+ events in box</span></div>
+          <div><b id="kM5">—</b><span>M5+ events</span></div>
+          <div><b id="kRed">—</b><span>Red cells</span></div>
+          <div><b id="kSpan">—</b><span>Catalogue span</span></div>
+        </div>
+        <p class="note" id="methodNote">—</p>
+      </div>
+
+      <div class="sec">
+        <h2>Gorkha 2015 damage</h2>
+        <p class="hint">Held-out test split, 31 anonymised survey areas. Click a column header to sort.</p>
+        <div class="tbl-wrap">
+          <table id="zoneTable">
+            <thead>
+              <tr>
+                <th class="zone" aria-label="Zone"></th>
+                <th data-sort="area">Area</th>
+                <th data-sort="buildings" class="num">Bldgs</th>
+                <th data-sort="g3" class="num">G3&nbsp;actual</th>
+                <th data-sort="g3p" class="num">G3&nbsp;pred</th>
+                <th data-sort="acc" class="num">Acc</th>
+              </tr>
+            </thead>
+            <tbody id="zoneBody"></tbody>
+          </table>
+        </div>
+        <p class="note" id="zoneNote">—</p>
+      </div>
+
+      <div class="sec">
+        <details>
+          <summary>How the hazard score is computed</summary>
+          <p id="methodFull">—</p>
+          <p class="note" id="disclaimer">—</p>
+        </details>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script src="/static/vendor/leaflet/leaflet.js"></script>
+<script>
+(() => {
+  const HAZ = '/static/hazard/';
+  const $ = (id) => document.getElementById(id);
+  const fmt = (n) => (n == null ? '—' : n.toLocaleString('en-IN'));
+  const pct = (v) => (v == null ? '—' : (v * 100).toFixed(1) + '%');
+
+  const COLORS = { red: '#c53030', yellow: '#d69e2e', green: '#2f855a', outside: '#dfe6ee' };
+
+  const map = L.map('map', { zoomControl: true, attributionControl: true, minZoom: 4, maxZoom: 11 })
+    .setView([26.2, 92.9], 7);
+
+  map.attributionControl.setPrefix(false);
+  map.attributionControl.addAttribution('Hazard: USGS M4+ catalogue, 2000–2026 · Boundary: Overture divisions');
+
+  let basemap = null;
+  $('btnBasemap').addEventListener('click', (e) => {
+    if (basemap) { map.removeLayer(basemap); basemap = null; e.currentTarget.classList.remove('on'); return; }
+    basemap = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 11, opacity: 0.55,
+      attribution: '© OpenStreetMap contributors',
+    }).addTo(map);
+    e.currentTarget.classList.add('on');
+  });
+
+  const eventsLayer = L.layerGroup().addTo(map);
+  $('btnEvents').addEventListener('click', (e) => {
+    if (map.hasLayer(eventsLayer)) { map.removeLayer(eventsLayer); e.currentTarget.classList.remove('on'); }
+    else { map.addLayer(eventsLayer); e.currentTarget.classList.add('on'); }
+  });
+
+  const HOME = { center: [26.2, 92.9], zoom: 7 };
+  $('btnFit').addEventListener('click', () => map.setView(HOME.center, HOME.zoom));
+
+  const setStatus = (msg) => {
+    const el = $('status');
+    if (!msg) { el.hidden = true; return; }
+    el.hidden = false; el.textContent = msg;
+  };
+
+  const magRadius = (m) => Math.max(3, Math.min(13, (m - 4.4) * 3.2));
+
+  // ---- hazard cells -------------------------------------------------------
+  fetch(HAZ + 'hazard_grid.geojson')
+    .then((r) => { if (!r.ok) throw new Error('hazard_grid ' + r.status); return r.json(); })
+    .then((gj) => {
+      const feats = gj.features || [];
+      $('cellCount').textContent = feats.length + ' cells';
+
+      const layer = L.geoJSON(gj, {
+        style: (f) => {
+          const p = f.properties;
+          const c = p.in_assam ? COLORS[p.cls] : COLORS.outside;
+          return {
+            color: p.in_assam ? c : '#cdd6e0',
+            weight: p.in_assam ? 0.5 : 0.3,
+            opacity: p.in_assam ? 0.55 : 0.5,
+            fillColor: c,
+            fillOpacity: p.in_assam ? (p.cls === 'red' ? 0.55 : 0.45) : 0.35,
+          };
+        },
+        onEachFeature: (f, lyr) => {
+          const p = f.properties;
+          const cls = p.in_assam ? p.cls : 'outside Assam';
+          lyr.bindPopup(
+            `<b>${cls === 'outside Assam' ? 'Outside Assam' : cls.toUpperCase()}</b><br>` +
+            `Score: ${p.score}<br>` +
+            `M4+ events in cell: ${p.events_m4plus}<br>` +
+            `Largest: ${p.max_mag == null ? '—' : 'M' + p.max_mag}`
+          );
+        },
+      }).addTo(map);
+
+      // Assam outline on top of the cells
+      fetch('/static/assam3d/assam_boundary.geojson')
+        .then((r) => (r.ok ? r.json() : null))
+        .then((b) => {
+          if (b) L.geoJSON(b, { style: { color: '#14213d', weight: 1.8, opacity: 0.9, fill: false } }).addTo(map);
+        })
+        .catch(() => {});
+
+      window.__cells = layer;
+      setStatus('');
+    })
+    .catch((err) => setStatus('Hazard grid unavailable — ' + err.message));
+
+  // ---- meta ---------------------------------------------------------------
+  fetch(HAZ + 'hazard_meta.json')
+    .then((r) => r.json())
+    .then((m) => {
+      $('kEvents').textContent = fmt(m.events_in_box);
+      $('kM5').textContent = fmt(m.events_m5_plus);
+      $('kRed').textContent = fmt(m.cells && m.cells.red);
+      const src = m.source || '';
+      const yrs = src.match(/(\d{4})-\d{2}-\d{2} to (\d{4})-\d{2}-\d{2}/);
+      $('kSpan').textContent = yrs ? `${yrs[1]}–${yrs[2]}` : '—';
+      $('methodNote').textContent = m.method || '';
+      $('methodFull').textContent =
+        (m.method || '') + ' Thresholds (log10 energy): yellow from ' +
+        (m.thresholds_log10_energy ? m.thresholds_log10_energy.yellow_from : '—') + ', red from ' +
+        (m.thresholds_log10_energy ? m.thresholds_log10_energy.red_from : '—') + '.';
+      $('disclaimer').textContent = m.disclaimer || '';
+    })
+    .catch(() => {});
+
+  // ---- M5+ events ---------------------------------------------------------
+  fetch(HAZ + 'events_m5plus.geojson')
+    .then((r) => { if (!r.ok) throw new Error('events ' + r.status); return r.json(); })
+    .then((gj) => {
+      (gj.features || []).forEach((f) => {
+        const p = f.properties;
+        const [lon, lat] = f.geometry.coordinates;
+        L.circleMarker([lat, lon], {
+          radius: magRadius(p.mag),
+          color: '#0b1a33', weight: 1,
+          fillColor: p.mag >= 6 ? '#1c2530' : '#334a6b',
+          fillOpacity: p.mag >= 6 ? 0.85 : 0.62,
+        })
+          .bindPopup(`<b>M${p.mag}</b> · ${p.time}<br>${p.place || ''}<br>Depth ${p.depth} km`)
+          .addTo(eventsLayer);
+      });
+    })
+    .catch(() => {});
+
+  // ---- Gorkha damage table ------------------------------------------------
+  let ZONES = [];
+  let sortKey = 'risk';
+  let sortDir = -1;
+
+  const zoneClass = { red: 'zred', yellow: 'zyellow', green: 'zgreen' };
+  const zonePill = { red: 'p-red', yellow: 'p-yellow', green: 'p-green' };
+
+  function renderTable() {
+    const body = $('zoneBody');
+    const val = (r) => ({
+      area: r.area, buildings: r.buildings_surveyed,
+      g3: r.g3_share_actual, g3p: r.g3_share_predicted,
+      acc: r.accuracy, risk: r.risk_score,
+    })[sortKey];
+    const rows = ZONES.slice().sort((a, b) => {
+      const x = val(a), y = val(b);
+      if (typeof x === 'string') return sortDir * x.localeCompare(y);
+      return sortDir * ((x ?? 0) - (y ?? 0));
+    });
+    body.innerHTML = rows.map((r) => `
+      <tr title="${r.area} · ${r.zone} zone · risk score ${r.risk_score}">
+        <td class="zone"><span class="dot ${zoneClass[r.zone]}" title="${r.zone} zone"></span></td>
+        <td><span class="pill ${zonePill[r.zone]}">${r.area}</span></td>
+        <td class="num">${fmt(r.buildings_surveyed)}</td>
+        <td class="num">${pct(r.g3_share_actual)}</td>
+        <td class="num">${pct(r.g3_share_predicted)}</td>
+        <td class="num">${pct(r.accuracy)}</td>
+      </tr>`).join('');
+  }
+
+  fetch(HAZ + 'damage_zones.json')
+    .then((r) => { if (!r.ok) throw new Error('damage_zones ' + r.status); return r.json(); })
+    .then((d) => {
+      ZONES = d.areas || [];
+      renderTable();
+      $('zoneNote').textContent =
+        `${d.areas_total} areas · ${fmt(d.buildings_total)} buildings · ` +
+        `zones: ${d.counts.red} red, ${d.counts.yellow} yellow, ${d.counts.green} green. ` +
+        (d.disclaimer || '');
+    })
+    .catch((err) => { $('zoneNote').textContent = 'Damage table unavailable — ' + err.message; });
+
+  document.querySelectorAll('#zoneTable thead th[data-sort]').forEach((th) => {
+    th.addEventListener('click', () => {
+      const k = th.dataset.sort;
+      if (k === sortKey) sortDir *= -1;
+      else { sortKey = k; sortDir = k === 'area' ? 1 : -1; }
+      renderTable();
+    });
+  });
+})();
+</script>
+</body>
+</html>

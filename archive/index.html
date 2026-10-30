@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Building damage grade prediction for the 2015 Gorkha earthquake (Nepal) using gradient-boosted ensembles, with area-level risk exploration.">
+  <title>Building Damage Grade Prediction · 2015 Gorkha Earthquake</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+
+<!-- ============ NAV ============ -->
+<nav class="nav" id="top">
+  <div class="nav-inner">
+    <a class="brand" href="#top">BDG<span>·</span>Nepal</a>
+    <div class="links">
+      <a href="#abstract">Abstract</a>
+      <a href="#data">Data</a>
+      <a href="#method">Method</a>
+      <a href="#results">Results</a>
+      <a href="#predict">Predict</a>
+      <a href="#area">Area map</a>
+      <a href="#limits">Limitations</a>
+      <a href="#references">References</a>
+      <a href="/3d">3D Assam</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ============ HERO ============ -->
+<header class="hero">
+  <div class="wrap">
+    <p class="kicker">Applied machine learning · Disaster resilience · Nepal</p>
+    <h1>Building Damage Grade Prediction<br><span>after the 2015 Gorkha Earthquake</span></h1>
+    <p class="lede">A gradient-boosted ensemble predicts the damage grade of individual buildings from structural and
+      location survey records, and an interactive module explores risk across geographic areas.</p>
+    <div class="stats" id="hero-stats">
+      <div class="stat"><b>260,601</b><span>surveyed buildings</span></div>
+      <div class="stat"><b id="hero-acc">—</b><span>held-out accuracy</span></div>
+      <div class="stat"><b id="hero-f1">—</b><span>macro-F1</span></div>
+      <div class="stat"><b>38</b><span>input features</span></div>
+    </div>
+    <div class="cta">
+      <a class="btn primary" href="#predict">Try the predictor</a>
+      <a class="btn" href="#results">Read the results</a>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- ============ ABSTRACT ============ -->
+  <section id="abstract" class="sec">
+    <h2><span class="num">1</span> Abstract</h2>
+    <div class="paper">
+      <p>After a major earthquake, engineers and relief agencies must decide which buildings to inspect first.
+        We model the damage grade of 260,601 buildings surveyed after the 2015 Gorkha earthquake in Nepal, using
+        38 structural, legal and geographic features, and three ordinal classes: low damage, medium damage and
+        near-complete destruction. A Categorical Naive Bayes baseline reaches 69.9% accuracy. Gradient-boosted
+        trees (LightGBM and XGBoost) with engineered ratios and geographic density features raise accuracy to
+        <b>75.7%</b> and macro-F1 to <b>0.710</b> on a held-out 20% test split that was never used for tuning.
+        The system also reports area-level summaries and an interactive predictor. These results are a
+        statistical estimate from survey records and do not replace structural assessment.</p>
+    </div>
+  </section>
+
+  <!-- ============ BACKGROUND ============ -->
+  <section id="background" class="sec">
+    <h2><span class="num">2</span> Background and research question</h2>
+    <p>Machine learning has been applied to post-earthquake building vulnerability and damage classification in several
+      settings, including Nepal (<a href="#ref-4">[4]</a>), the Indian subcontinent (<a href="#ref-6">[6]</a>) and the 2023 Kahramanmaraş earthquakes in Turkey (<a href="#ref-8">[8]</a>). Many studies compare a few classifiers on one dataset, and few connect building-level
+      prediction to an interpretable area-level view. Naive Bayes is attractive for its transparency, but it assumes
+      features are independent, which real building attributes are not.</p>
+    <p><b>Research question.</b> How much does a modern gradient-boosted ensemble improve building damage grade prediction
+      over an interpretable Naive Bayes baseline on the same survey data, and what limits the achievable accuracy?</p>
+  </section>
+
+  <!-- ============ DATA ============ -->
+  <section id="data" class="sec">
+    <h2><span class="num">3</span> Data</h2>
+    <p>We use the training set of the DrivenData competition <i>Richter's Predictor: Modeling Earthquake Damage</i> <a href="#ref-11">[11]</a>,
+      derived from the 2015 Nepal Earthquake Open Data Portal, compiled by the National Planning Commission with Kathmandu
+      Living Labs <a href="#ref-14">[14]</a>. Each row is one building. Features cover structure (floors, age, plinth area, height,
+      foundation, roof and superstructure types), land and legal status, household counts, secondary use, and three
+      nested anonymised geographic IDs. The labels are ordinal damage grades.</p>
+
+    <div class="grid-2">
+      <figure class="figure">
+        <figcaption><b>Table 1.</b> Dataset summary</figcaption>
+        <table class="data">
+          <tbody>
+            <tr><th>Buildings (rows)</th><td>260,601</td></tr>
+            <tr><th>Input features</th><td>38 (no missing values)</td></tr>
+            <tr><th>Categorical / binary / numeric</th><td>8 / 22 / 5 (plus 3 geographic IDs)</td></tr>
+            <tr><th>Target</th><td>damage_grade ∈ {1, 2, 3}</td></tr>
+            <tr><th>Evaluation split</th><td>80% train (208,480) · 20% test (52,121), stratified, seed 42</td></tr>
+          </tbody>
+        </table>
+      </figure>
+      <figure class="figure">
+        <figcaption><b>Figure 1.</b> Class distribution (all 260,601 buildings)</figcaption>
+        <div class="dist" id="dist"></div>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ============ METHOD ============ -->
+  <section id="method" class="sec">
+    <h2><span class="num">4</span> Method</h2>
+    <div class="pipeline">
+      <div class="step"><b>Survey records</b><span>38 features<br>3 classes</span></div>
+      <div class="arrow">→</div>
+      <div class="step"><b>Feature engineering</b><span>ratios, counts,<br>geo density</span></div>
+      <div class="arrow">→</div>
+      <div class="step"><b>Early-stopped models</b><span>LightGBM<br>XGBoost</span></div>
+      <div class="arrow">→</div>
+      <div class="step"><b>Probability average</b><span>3-class<br>ensemble</span></div>
+      <div class="arrow">→</div>
+      <div class="step"><b>Held-out evaluation</b><span>20% test,<br>used once</span></div>
+    </div>
+
+    <h3>4.1 Feature engineering</h3>
+    <ul class="bullets">
+      <li><b>Geographic density.</b> For each geographic ID level, the share of training buildings in the same area
+        (computed on the fitting slice only, so no label information leaks).</li>
+      <li><b>Structural ratios.</b> Height per floor, plinth area per floor, a volume proxy (area × height), families per
+        unit area, and age × floors.</li>
+      <li><b>Counts.</b> Number of superstructure types and secondary uses recorded for each building.</li>
+    </ul>
+
+    <h3>4.2 Models</h3>
+    <ul class="bullets">
+      <li><b>LightGBM</b> <a href="#ref-12">[12]</a>: multiclass gradient boosting with native categorical splits for the text
+        columns and geographic IDs; 127 leaves, learning rate 0.05, L2 regularisation.</li>
+      <li><b>XGBoost</b> <a href="#ref-13">[13]</a>: histogram-based gradient boosting; geographic IDs as integer codes to
+        avoid a memory blow-up from ~11,000 categories.</li>
+      <li><b>Ensemble.</b> The final model averages the two probability vectors.</li>
+      <li><b>Baselines.</b> Categorical Naive Bayes with the mid-review setup, and an improved Naive Bayes with mutual-information feature
+        selection and tuned discretisation <a href="#ref-1">[1]</a>.</li>
+    </ul>
+
+    <h3>4.3 Validation protocol</h3>
+    <p>The data are split once into 80% training and 20% test, stratified by grade. Inside the training part, a stratified
+      10% slice drives early stopping. The test split is scored once per model and was not used to choose any setting.
+      All design choices (feature subsets, bins, smoothing, balancing) were selected with cross-validation on the
+      training part only. The metric is macro-F1, which weights the rare grade 1 equally, and accuracy, which equals the
+      competition's micro-F1.</p>
+  </section>
+
+  <!-- ============ RESULTS ============ -->
+  <section id="results" class="sec">
+    <h2><span class="num">5</span> Results</h2>
+    <p>Table 2 compares all models on the same held-out test split (52,121 buildings). Figure 2 visualises accuracy, and
+      Figure 3 shows per-grade F1 for the baseline and the final model.</p>
+
+    <figure class="figure wide">
+      <figcaption><b>Table 2.</b> Test-set performance. Best values in bold.</figcaption>
+      <div class="table-wrap">
+        <table class="data results" id="results-table"></table>
+      </div>
+      <p class="note" id="results-note"></p>
+    </figure>
+
+    <div class="grid-2">
+      <figure class="figure">
+        <figcaption><b>Figure 2.</b> Test accuracy by model</figcaption>
+        <div id="acc-chart"></div>
+      </figure>
+      <figure class="figure">
+        <figcaption><b>Figure 3.</b> Per-grade F1: baseline Naive Bayes compared with the final ensemble</figcaption>
+        <div id="f1-chart"></div>
+      </figure>
+    </div>
+
+    <figure class="figure">
+      <figcaption><b>Figure 4.</b> Confusion matrix of the final ensemble (rows: actual grade, columns: predicted grade, counts on the test split)</figcaption>
+      <div id="cm"></div>
+    </figure>
+
+    <div class="callout">
+      <h3>How the result compares with the target and literature</h3>
+      <p>The original goal was 85% accuracy. We did not reach that level, and we do not expect to on this survey without other information. Strong public entries
+        in the DrivenData competition score roughly 0.74–0.76 micro-F1 <a href="#ref-11">[11]</a>, which is the same as accuracy here.
+        Reaching 85% would most likely require information that the survey does not contain; a higher figure reported on this data would need checking for leakage between training and test rows.</p>
+      <p>The base paper P4 <a href="#ref-4">[4]</a> reports macro-F1 0.729 on Nepal survey data with SMOTE-XGBoost, under its own split and preprocessing.
+        Our final ensemble reaches macro-F1 0.710 on a separate protocol. The two numbers are close but not directly comparable.</p>
+    </div>
+  </section>
+
+  <!-- ============ PREDICT ============ -->
+  <section id="predict" class="sec">
+    <h2><span class="num">6</span> Predict a building</h2>
+    <p>Enter the building's characteristics. Defaults are typical values from the training data. The model returns the
+      predicted grade and the probability assigned to each grade.</p>
+    <div class="grid-predict">
+      <form id="predict-form" class="card form" autocomplete="off">
+        <div id="form-fields"></div>
+        <div class="actions">
+          <button type="submit" class="btn primary" id="submit-btn">Predict damage grade</button>
+          <button type="button" id="reset-form" class="btn ghost">Reset to defaults</button>
+        </div>
+        <p id="form-error" class="error" hidden></p>
+      </form>
+      <aside class="card result" id="result">
+        <h3>Result</h3>
+        <p class="placeholder">Complete the form and press <b>Predict damage grade</b>.</p>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ============ AREA ============ -->
+  <section id="area" class="sec">
+    <h2><span class="num">7</span> Area risk exploration</h2>
+    <p class="note-box"><b>Important.</b> The dataset's geographic IDs are anonymised and are not yet linked to real districts.
+      The table below therefore summarises risk by these anonymised areas (Figure 6). The district map (Figure 5) shows official
+      boundaries for orientation only and does not display risk.</p>
+
+    <div class="grid-area">
+      <figure class="figure">
+        <figcaption><b>Figure 5.</b> Nepal district boundaries (official COD-AB, OCHA / Survey Department of Nepal <a href="#ref-15">[15]</a>)</figcaption>
+        <div class="map" id="map"></div>
+        <p class="tip" id="map-tip">Hover a district to see its name.</p>
+      </figure>
+
+      <figure class="figure">
+        <figcaption><b>Figure 6.</b> Risk by anonymised geographic area (held-out test split)</figcaption>
+        <div class="overall" id="overall"></div>
+        <div class="table-wrap">
+          <table class="data" id="area-table">
+            <thead><tr><th>Area</th><th>Buildings</th><th>Actual grade 3</th><th>Mean P(grade 3)</th><th>Accuracy</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div id="area-detail" class="detail"><p class="placeholder">Select an area to see actual and predicted shares.</p></div>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ============ LIMITATIONS ============ -->
+  <section id="limits" class="sec">
+    <h2><span class="num">8</span> Limitations and ethical use</h2>
+    <ul class="bullets">
+      <li><b>Statistical, not structural.</b> Predictions are estimates from 2015 survey records. They do not replace inspection by a qualified engineer.</li>
+      <li><b>Single dataset and period.</b> The model reflects one earthquake, one survey and the construction practices of that time.</li>
+      <li><b>Imbalance.</b> Grade 1 is the rarest class (9.6%) and remains the hardest to predict (F1 about 0.62).</li>
+      <li><b>No location coordinates.</b> Geographic IDs are anonymised, so risk cannot yet be placed on real districts or 1-acre plots.</li>
+      <li><b>Single split.</b> Results come from one stratified split. Differences below about 0.5 points between models should not be over-interpreted.</li>
+      <li><b>Responsible use.</b> Outputs should inform prioritisation, never replace structural judgement. The site collects no personal data.</li>
+    </ul>
+  </section>
+
+  <!-- ============ REPRODUCIBILITY ============ -->
+  <section id="repro" class="sec">
+    <h2><span class="num">9</span> Reproducibility</h2>
+    <p>All code and metrics are included. Training uses the competition's <code>train_values.csv</code> and <code>train_labels.csv</code>.</p>
+    <pre class="code"><code># 1. train the final model and write metrics (about 3 minutes on 2 CPUs)
+python model.py train --values train_values.csv --labels train_labels.csv --out models
+
+# 2. baselines and boosting comparison
+python damage_nb_compare.py --values train_values.csv --labels train_labels.csv --out results
+python damage_boost.py      --values train_values.csv --labels train_labels.csv --out results_boost
+
+# 3. regenerate site data and run the web app
+python web/build_results.py
+python web/build_site_data.py --values train_values.csv --labels train_labels.csv
+uvicorn web.app:app --host 0.0.0.0 --port 8010</code></pre>
+    <p class="note">Software: Python 3.13, scikit-learn 1.6.1, LightGBM 4.7, XGBoost 3.4, pandas 2.2.3, FastAPI 0.115.</p>
+  </section>
+
+  <!-- ============ REFERENCES ============ -->
+  <section id="references" class="sec">
+    <h2><span class="num">10</span> References</h2>
+    <ol class="refs">
+      <li id="ref-1">Doğan, A., Başeğmez, M., Aydın, C. C. (2025). Assessment of the seismic vulnerability in an urban area with the integration of machine learning methods and GIS. <i>Natural Hazards</i>, 121(8), 9613–9652. <a href="https://doi.org/10.1007/s11069-025-07185-4">doi:10.1007/s11069-025-07185-4</a></li>
+      <li id="ref-2">Shalu, Acharya, T., Gharekhan, D., Samal, D. (2024). Harnessing ML and GIS for seismic vulnerability assessment and risk prioritization. <i>RIG</i>, 33(1). <a href="https://doi.org/10.32604/rig.2024.051788">doi:10.32604/rig.2024.051788</a></li>
+      <li id="ref-3">Rapid seismic damage-state assessment of steel moment frames using machine learning (2022). <i>Engineering Structures</i>. <a href="https://doi.org/10.1016/j.engstruct.2021.113737">doi:10.1016/j.engstruct.2021.113737</a></li>
+      <li id="ref-4">Chen, W., Zhang, L. (2022). Building vulnerability assessment in seismic areas using ensemble learning: A Nepal case study. <i>Journal of Cleaner Production</i>. <a href="https://doi.org/10.1016/j.jclepro.2022.131418">doi:10.1016/j.jclepro.2022.131418</a></li>
+      <li id="ref-5">Sajan, K. C., Bhusal, A., Gautam, D., Rupakhety, R. (2023). Earthquake damage and rehabilitation intervention prediction using machine learning. <i>Engineering Failure Analysis</i>, 144, 106949.</li>
+      <li id="ref-6">Jena, R., Naik, S. P., Pradhan, B., Beydoun, G., Park, H.-J., Alamri, A. (2021). Earthquake vulnerability assessment for the Indian subcontinent using the LSTM model. <i>International Journal of Disaster Risk Reduction</i>, 66, 102642. <a href="https://doi.org/10.1016/j.ijdrr.2021.102642">doi:10.1016/j.ijdrr.2021.102642</a></li>
+      <li id="ref-7">Matin, S. S., Pradhan, B. (2021). Earthquake-induced building-damage mapping using explainable AI (XAI). <i>Sensors</i>, 21(13), 4489. <a href="https://doi.org/10.3390/s21134489">doi:10.3390/s21134489</a></li>
+      <li id="ref-8">Mostofi, S., et al. (2025). A hybrid stacked ensemble model for rapid seismic damage assessment with imbalanced training data. <i>Engineering Structures</i>, 340, 120754. <a href="https://www.sciencedirect.com/science/article/pii/S0141029625011459">link</a></li>
+      <li id="ref-9">Macchiarulo, V., Giardina, G., Milillo, P., Aktas, Y. D., Whitworth, M. R. Z. (2024). Integrating post-event VHR SAR imagery and machine learning for building-level earthquake damage assessment. <i>Bulletin of Earthquake Engineering</i>. <a href="https://doi.org/10.1007/s10518-024-01877-1">doi:10.1007/s10518-024-01877-1</a></li>
+      <li id="ref-10">Sheibani, M., Ou, G. (2021). The development of Gaussian process regression for effective regional post-earthquake building damage inference. <i>Computer-Aided Civil and Infrastructure Engineering</i>, 36(3), 264–288. <a href="https://doi.org/10.1111/mice.12630">doi:10.1111/mice.12630</a></li>
+      <li id="ref-11">DrivenData. <i>Richter's Predictor: Modeling Earthquake Damage</i> (competition and data, Nepal 2015). <a href="https://www.drivendata.org/competitions/57/nepal-earthquake/">drivendata.org/competitions/57</a>; leaderboard: <a href="https://www.deon.drivendata.org/competitions/57/nepal-earthquake/leaderboard/">leaderboard</a>.</li>
+      <li id="ref-12">Ke, G., et al. (2017). LightGBM: A highly efficient gradient boosting decision tree. <i>Advances in Neural Information Processing Systems</i>, 30.</li>
+      <li id="ref-13">Chen, T., Guestrin, C. (2016). XGBoost: A scalable tree boosting system. In <i>Proceedings of KDD '16</i>. <a href="https://doi.org/10.1145/2939672.2939785">doi:10.1145/2939672.2939785</a></li>
+      <li id="ref-14">2015 Nepal Earthquake Open Data Portal, National Planning Commission (Nepal) with Kathmandu Living Labs. <a href="https://eq2015.npc.gov.np">eq2015.npc.gov.np</a></li>
+      <li id="ref-15">OCHA / Survey Department of Nepal. Nepal Subnational Administrative Boundaries (COD-AB), Humanitarian Data Exchange. <a href="https://data.humdata.org/dataset/cod-ab-npl">data.humdata.org/dataset/cod-ab-npl</a></li>
+      <li id="ref-16">Pedregosa, F., et al. (2011). Scikit-learn: Machine learning in Python. <i>Journal of Machine Learning Research</i>, 12, 2825–2830.</li>
+    </ol>
+  </section>
+
+  <!-- ============ TEAM ============ -->
+  <section id="team" class="sec">
+    <h2><span class="num">11</span> Project team</h2>
+    <div class="team">
+      <div><b>Venkata Sai Nikhil</b><span>CB.AI.U4CPS26013</span></div>
+      <div><b>Venkata Nishitha</b><span>CB.AI.U4CPS26014</span></div>
+      <div><b>Guttha Lekhana</b><span>CB.AI.U4CPS26015</span></div>
+      <div><b>Harish Karteek</b><span>CB.AI.U4CPS26016</span></div>
+    </div>
+    <p class="note">Built on the mid-review project <i>Earthquake Damage Prediction and 1-Acre Risk Mapping Using Naive Bayes and GIS</i>.</p>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <p>Building Damage Grade Prediction · Statistical estimates from 2015 survey data · Not a structural assessment or safety certificate.</p>
+  </div>
+</footer>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
