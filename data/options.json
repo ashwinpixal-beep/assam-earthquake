@@ -1,0 +1,395 @@
+{
+ "fields": [
+  {
+   "name": "geo_level_1_id",
+   "label": "Geo area level 1 (ID)",
+   "kind": "geo",
+   "min": 0,
+   "max": 30,
+   "default": 6
+  },
+  {
+   "name": "geo_level_2_id",
+   "label": "Geo area level 2 (ID)",
+   "kind": "geo",
+   "min": 0,
+   "max": 1427,
+   "default": 39
+  },
+  {
+   "name": "geo_level_3_id",
+   "label": "Geo area level 3 (ID)",
+   "kind": "geo",
+   "min": 0,
+   "max": 12567,
+   "default": 633
+  },
+  {
+   "name": "count_floors_pre_eq",
+   "label": "Floors before earthquake",
+   "kind": "number",
+   "min": 1.0,
+   "max": 9.0,
+   "default": 2.0
+  },
+  {
+   "name": "age",
+   "label": "Building age (years)",
+   "kind": "number",
+   "min": 0.0,
+   "max": 995.0,
+   "default": 15.0
+  },
+  {
+   "name": "area_percentage",
+   "label": "Plinth area (percent)",
+   "kind": "number",
+   "min": 1.0,
+   "max": 100.0,
+   "default": 7.0
+  },
+  {
+   "name": "height_percentage",
+   "label": "Height (percent)",
+   "kind": "number",
+   "min": 2.0,
+   "max": 32.0,
+   "default": 5.0
+  },
+  {
+   "name": "land_surface_condition",
+   "label": "Land surface condition",
+   "kind": "choice",
+   "values": [
+    "n",
+    "o",
+    "t"
+   ],
+   "default": "t"
+  },
+  {
+   "name": "foundation_type",
+   "label": "Foundation type",
+   "kind": "choice",
+   "values": [
+    "h",
+    "i",
+    "r",
+    "u",
+    "w"
+   ],
+   "default": "r"
+  },
+  {
+   "name": "roof_type",
+   "label": "Roof type",
+   "kind": "choice",
+   "values": [
+    "n",
+    "q",
+    "x"
+   ],
+   "default": "n"
+  },
+  {
+   "name": "ground_floor_type",
+   "label": "Ground floor type",
+   "kind": "choice",
+   "values": [
+    "f",
+    "m",
+    "v",
+    "x",
+    "z"
+   ],
+   "default": "f"
+  },
+  {
+   "name": "other_floor_type",
+   "label": "Other floor type",
+   "kind": "choice",
+   "values": [
+    "j",
+    "q",
+    "s",
+    "x"
+   ],
+   "default": "q"
+  },
+  {
+   "name": "position",
+   "label": "Building position",
+   "kind": "choice",
+   "values": [
+    "j",
+    "o",
+    "s",
+    "t"
+   ],
+   "default": "s"
+  },
+  {
+   "name": "plan_configuration",
+   "label": "Plan configuration",
+   "kind": "choice",
+   "values": [
+    "a",
+    "c",
+    "d",
+    "f",
+    "m",
+    "n",
+    "o",
+    "q",
+    "s",
+    "u"
+   ],
+   "default": "d"
+  },
+  {
+   "name": "has_superstructure_adobe_mud",
+   "label": "Has superstructure adobe mud",
+   "kind": "binary",
+   "values": [
+    0,
+    1
+   ],
+   "default": 0
+  },
+  {
+   "name": "has_superstructure_mud_mortar_stone",
+   "label": "Has superstructure mud mortar stone",
+   "kind": "binary",
+   "values": [
+    0,
+    1
+   ],
+   "default": 1
+  },
+  {
+   "name": "has_superstructure_stone_flag",
+   "label": "Has superstructure stone flag",
+   "kind": "binary",
+   "values": [
+    0,
+    1
+   ],
+   "default": 0
+  },
+  {
+   "name": "has_superstructure_cement_mortar_stone",
+   "label": "Has superstructure cement mortar stone",
+   "kind": "binary",
+   "values": [
+    0,
+    1
+   ],
+   "default": 0
+  },
+  {
+   "name": "has_superstructure_mud_mortar_brick",
+   "label": "Has superstructure mud mortar brick",
+   "kind": "binary",
+   "values": [
+    0,
+    1
+   ],
+   "default": 0
+  },
+  {
+   "name": "has_superstructure_cement_mortar_brick",
+   "label": "Has superstructure cement mortar brick",
+   "kind": "binary",
+   "values": [
+    0,
+    1
+   ],
+   "default": 0
+  },
+  {
+   "name": "has_superstructure_timber",
+   "label": "Has superstructure timber",
+   "kind": "binary",
+   "values": [
+    0,
+    1
+   ],
+   "default": 0
+  },
+  {
+   "name": "has_superstructure_bamboo",
+   "label": "Has superstructure bamboo",
+   "kind": "binary",
+   "values": [
+    0,
+    1
+   ],
+   "default": 0
+  },
+  {
+   "name": "has_superstructure_rc_non_engineered",
+   "label": "Has superstructure rc non engineered",
+   "kind": "binary",
+   "values": [
+    0,
+    1
+   ],
+   "default": 0
+  },
+  {
+   "name": "has_superstructure_rc_engineered",
+   "label": "Has superstructure rc engineered",
+   "kind": "binary",
+   "values": [
+    0,
+    1
+   ],
+   "default": 0
+  },
+  {
+   "name": "has_superstructure_other",
+   "label": "Has superstructure other",
+   "kind": "binary",
+   "values": [
+    0,
+    1
+   ],
+   "default": 0
+  },
+  {
+   "name": "legal_ownership_status",
+   "label": "Legal ownership status",
+   "kind": "choice",
+   "values": [
+    "a",
+    "r",
+    "v",
+    "w"
+   ],
+   "default": "v"
+  },
+  {
+   "name": "count_families",
+   "label": "Number of families",
+   "kind": "number",
+   "min": 0.0,
+   "max": 9.0,
+   "default": 1.0
+  },
+  {
+   "name": "has_secondary_use",
+   "label": "Has secondary use",
+   "kind": "binary",
+   "values": [
+    0,
+    1
+   ],
+   "default": 0
+  },
+  {
+   "name": "has_secondary_use_agriculture",
+   "label": "Has secondary use agriculture",
+   "kind": "binary",
+   "values": [
+    0,
+    1
+   ],
+   "default": 0
+  },
+  {
+   "name": "has_secondary_use_hotel",
+   "label": "Has secondary use hotel",
+   "kind": "binary",
+   "values": [
+    0,
+    1
+   ],
+   "default": 0
+  },
+  {
+   "name": "has_secondary_use_rental",
+   "label": "Has secondary use rental",
+   "kind": "binary",
+   "values": [
+    0,
+    1
+   ],
+   "default": 0
+  },
+  {
+   "name": "has_secondary_use_institution",
+   "label": "Has secondary use institution",
+   "kind": "binary",
+   "values": [
+    0,
+    1
+   ],
+   "default": 0
+  },
+  {
+   "name": "has_secondary_use_school",
+   "label": "Has secondary use school",
+   "kind": "binary",
+   "values": [
+    0,
+    1
+   ],
+   "default": 0
+  },
+  {
+   "name": "has_secondary_use_industry",
+   "label": "Has secondary use industry",
+   "kind": "binary",
+   "values": [
+    0,
+    1
+   ],
+   "default": 0
+  },
+  {
+   "name": "has_secondary_use_health_post",
+   "label": "Has secondary use health post",
+   "kind": "binary",
+   "values": [
+    0,
+    1
+   ],
+   "default": 0
+  },
+  {
+   "name": "has_secondary_use_gov_office",
+   "label": "Has secondary use gov office",
+   "kind": "binary",
+   "values": [
+    0,
+    1
+   ],
+   "default": 0
+  },
+  {
+   "name": "has_secondary_use_use_police",
+   "label": "Has secondary use use police",
+   "kind": "binary",
+   "values": [
+    0,
+    1
+   ],
+   "default": 0
+  },
+  {
+   "name": "has_secondary_use_other",
+   "label": "Has secondary use other",
+   "kind": "binary",
+   "values": [
+    0,
+    1
+   ],
+   "default": 0
+  }
+ ],
+ "grades": {
+  "1": "Low damage",
+  "2": "Medium damage",
+  "3": "Near-complete destruction"
+ }
+}

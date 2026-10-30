@@ -1,0 +1,670 @@
+{
+ "basis": "held-out test split (20%), model not trained on these rows",
+ "overall": {
+  "buildings_test": 52121,
+  "accuracy": 0.7568,
+  "actual_share": {
+   "1": 0.0964,
+   "2": 0.5689,
+   "3": 0.3347
+  },
+  "mean_probability": {
+   "1": 0.0954,
+   "2": 0.5695,
+   "3": 0.3352
+  }
+ },
+ "areas": [
+  {
+   "geo_level_1_id": 17,
+   "buildings_test": 4386,
+   "actual_share": {
+    "1": 0.0123,
+    "2": 0.1756,
+    "3": 0.8121
+   },
+   "predicted_share": {
+    "1": 0.0078,
+    "2": 0.0964,
+    "3": 0.8958
+   },
+   "mean_probability": {
+    "1": 0.0144,
+    "2": 0.1767,
+    "3": 0.8089
+   },
+   "accuracy": 0.8609,
+   "risk_score": 0.8089
+  },
+  {
+   "geo_level_1_id": 18,
+   "buildings_test": 653,
+   "actual_share": {
+    "1": 0.0276,
+    "2": 0.2404,
+    "3": 0.732
+   },
+   "predicted_share": {
+    "1": 0.0138,
+    "2": 0.1685,
+    "3": 0.8178
+   },
+   "mean_probability": {
+    "1": 0.0207,
+    "2": 0.2432,
+    "3": 0.7361
+   },
+   "accuracy": 0.7917,
+   "risk_score": 0.7361
+  },
+  {
+   "geo_level_1_id": 21,
+   "buildings_test": 2938,
+   "actual_share": {
+    "1": 0.0197,
+    "2": 0.3887,
+    "3": 0.5916
+   },
+   "predicted_share": {
+    "1": 0.0225,
+    "2": 0.3295,
+    "3": 0.6481
+   },
+   "mean_probability": {
+    "1": 0.0247,
+    "2": 0.3878,
+    "3": 0.5874
+   },
+   "accuracy": 0.7383,
+   "risk_score": 0.5874
+  },
+  {
+   "geo_level_1_id": 8,
+   "buildings_test": 3775,
+   "actual_share": {
+    "1": 0.0371,
+    "2": 0.4358,
+    "3": 0.5272
+   },
+   "predicted_share": {
+    "1": 0.031,
+    "2": 0.4215,
+    "3": 0.5475
+   },
+   "mean_probability": {
+    "1": 0.0341,
+    "2": 0.452,
+    "3": 0.5138
+   },
+   "accuracy": 0.6911,
+   "risk_score": 0.5138
+  },
+  {
+   "geo_level_1_id": 27,
+   "buildings_test": 2561,
+   "actual_share": {
+    "1": 0.0367,
+    "2": 0.4697,
+    "3": 0.4936
+   },
+   "predicted_share": {
+    "1": 0.0312,
+    "2": 0.4479,
+    "3": 0.5209
+   },
+   "mean_probability": {
+    "1": 0.0369,
+    "2": 0.4806,
+    "3": 0.4825
+   },
+   "accuracy": 0.706,
+   "risk_score": 0.4825
+  },
+  {
+   "geo_level_1_id": 10,
+   "buildings_test": 4430,
+   "actual_share": {
+    "1": 0.0562,
+    "2": 0.5499,
+    "3": 0.3939
+   },
+   "predicted_share": {
+    "1": 0.0476,
+    "2": 0.6047,
+    "3": 0.3476
+   },
+   "mean_probability": {
+    "1": 0.0534,
+    "2": 0.5474,
+    "3": 0.3992
+   },
+   "accuracy": 0.7436,
+   "risk_score": 0.3992
+  },
+  {
+   "geo_level_1_id": 11,
+   "buildings_test": 1611,
+   "actual_share": {
+    "1": 0.0472,
+    "2": 0.5587,
+    "3": 0.3942
+   },
+   "predicted_share": {
+    "1": 0.0372,
+    "2": 0.648,
+    "3": 0.3147
+   },
+   "mean_probability": {
+    "1": 0.0427,
+    "2": 0.577,
+    "3": 0.3803
+   },
+   "accuracy": 0.7052,
+   "risk_score": 0.3803
+  },
+  {
+   "geo_level_1_id": 28,
+   "buildings_test": 44,
+   "actual_share": {
+    "1": 0.0,
+    "2": 0.5682,
+    "3": 0.4318
+   },
+   "predicted_share": {
+    "1": 0.0,
+    "2": 0.75,
+    "3": 0.25
+   },
+   "mean_probability": {
+    "1": 0.0081,
+    "2": 0.6134,
+    "3": 0.3785
+   },
+   "accuracy": 0.6364,
+   "risk_score": 0.3785
+  },
+  {
+   "geo_level_1_id": 3,
+   "buildings_test": 1550,
+   "actual_share": {
+    "1": 0.0355,
+    "2": 0.5994,
+    "3": 0.3652
+   },
+   "predicted_share": {
+    "1": 0.0316,
+    "2": 0.6865,
+    "3": 0.2819
+   },
+   "mean_probability": {
+    "1": 0.0369,
+    "2": 0.6015,
+    "3": 0.3616
+   },
+   "accuracy": 0.7116,
+   "risk_score": 0.3616
+  },
+  {
+   "geo_level_1_id": 7,
+   "buildings_test": 3811,
+   "actual_share": {
+    "1": 0.0509,
+    "2": 0.5854,
+    "3": 0.3637
+   },
+   "predicted_share": {
+    "1": 0.0438,
+    "2": 0.6762,
+    "3": 0.28
+   },
+   "mean_probability": {
+    "1": 0.0548,
+    "2": 0.5866,
+    "3": 0.3586
+   },
+   "accuracy": 0.7746,
+   "risk_score": 0.3586
+  },
+  {
+   "geo_level_1_id": 2,
+   "buildings_test": 211,
+   "actual_share": {
+    "1": 0.1185,
+    "2": 0.6161,
+    "3": 0.2654
+   },
+   "predicted_share": {
+    "1": 0.0474,
+    "2": 0.7536,
+    "3": 0.1991
+   },
+   "mean_probability": {
+    "1": 0.0945,
+    "2": 0.6298,
+    "3": 0.2757
+   },
+   "accuracy": 0.6777,
+   "risk_score": 0.2757
+  },
+  {
+   "geo_level_1_id": 6,
+   "buildings_test": 4863,
+   "actual_share": {
+    "1": 0.0853,
+    "2": 0.6753,
+    "3": 0.2394
+   },
+   "predicted_share": {
+    "1": 0.0769,
+    "2": 0.7637,
+    "3": 0.1594
+   },
+   "mean_probability": {
+    "1": 0.0812,
+    "2": 0.6731,
+    "3": 0.2456
+   },
+   "accuracy": 0.7767,
+   "risk_score": 0.2456
+  },
+  {
+   "geo_level_1_id": 23,
+   "buildings_test": 217,
+   "actual_share": {
+    "1": 0.0876,
+    "2": 0.659,
+    "3": 0.2535
+   },
+   "predicted_share": {
+    "1": 0.0,
+    "2": 0.9493,
+    "3": 0.0507
+   },
+   "mean_probability": {
+    "1": 0.0564,
+    "2": 0.7019,
+    "3": 0.2417
+   },
+   "accuracy": 0.682,
+   "risk_score": 0.2417
+  },
+  {
+   "geo_level_1_id": 15,
+   "buildings_test": 460,
+   "actual_share": {
+    "1": 0.0674,
+    "2": 0.7543,
+    "3": 0.1783
+   },
+   "predicted_share": {
+    "1": 0.0152,
+    "2": 0.9587,
+    "3": 0.0261
+   },
+   "mean_probability": {
+    "1": 0.0638,
+    "2": 0.7207,
+    "3": 0.2155
+   },
+   "accuracy": 0.7543,
+   "risk_score": 0.2155
+  },
+  {
+   "geo_level_1_id": 12,
+   "buildings_test": 630,
+   "actual_share": {
+    "1": 0.0762,
+    "2": 0.6952,
+    "3": 0.2286
+   },
+   "predicted_share": {
+    "1": 0.0127,
+    "2": 0.9302,
+    "3": 0.0571
+   },
+   "mean_probability": {
+    "1": 0.0523,
+    "2": 0.7332,
+    "3": 0.2145
+   },
+   "accuracy": 0.7143,
+   "risk_score": 0.2145
+  },
+  {
+   "geo_level_1_id": 16,
+   "buildings_test": 896,
+   "actual_share": {
+    "1": 0.0491,
+    "2": 0.75,
+    "3": 0.2009
+   },
+   "predicted_share": {
+    "1": 0.0301,
+    "2": 0.894,
+    "3": 0.0759
+   },
+   "mean_probability": {
+    "1": 0.0458,
+    "2": 0.7436,
+    "3": 0.2106
+   },
+   "accuracy": 0.798,
+   "risk_score": 0.2106
+  },
+  {
+   "geo_level_1_id": 19,
+   "buildings_test": 87,
+   "actual_share": {
+    "1": 0.069,
+    "2": 0.7471,
+    "3": 0.1839
+   },
+   "predicted_share": {
+    "1": 0.023,
+    "2": 0.9425,
+    "3": 0.0345
+   },
+   "mean_probability": {
+    "1": 0.0776,
+    "2": 0.7233,
+    "3": 0.1992
+   },
+   "accuracy": 0.7586,
+   "risk_score": 0.1992
+  },
+  {
+   "geo_level_1_id": 4,
+   "buildings_test": 2858,
+   "actual_share": {
+    "1": 0.0343,
+    "2": 0.7761,
+    "3": 0.1896
+   },
+   "predicted_share": {
+    "1": 0.0108,
+    "2": 0.9283,
+    "3": 0.0609
+   },
+   "mean_probability": {
+    "1": 0.0313,
+    "2": 0.7715,
+    "3": 0.1971
+   },
+   "accuracy": 0.8016,
+   "risk_score": 0.1971
+  },
+  {
+   "geo_level_1_id": 14,
+   "buildings_test": 331,
+   "actual_share": {
+    "1": 0.1178,
+    "2": 0.7372,
+    "3": 0.145
+   },
+   "predicted_share": {
+    "1": 0.0302,
+    "2": 0.9486,
+    "3": 0.0211
+   },
+   "mean_probability": {
+    "1": 0.1074,
+    "2": 0.7254,
+    "3": 0.1672
+   },
+   "accuracy": 0.7492,
+   "risk_score": 0.1672
+  },
+  {
+   "geo_level_1_id": 9,
+   "buildings_test": 755,
+   "actual_share": {
+    "1": 0.1311,
+    "2": 0.6861,
+    "3": 0.1828
+   },
+   "predicted_share": {
+    "1": 0.0821,
+    "2": 0.8517,
+    "3": 0.0662
+   },
+   "mean_probability": {
+    "1": 0.1243,
+    "2": 0.7131,
+    "3": 0.1626
+   },
+   "accuracy": 0.743,
+   "risk_score": 0.1626
+  },
+  {
+   "geo_level_1_id": 0,
+   "buildings_test": 801,
+   "actual_share": {
+    "1": 0.0861,
+    "2": 0.7803,
+    "3": 0.1336
+   },
+   "predicted_share": {
+    "1": 0.03,
+    "2": 0.9513,
+    "3": 0.0187
+   },
+   "mean_probability": {
+    "1": 0.08,
+    "2": 0.7696,
+    "3": 0.1504
+   },
+   "accuracy": 0.7728,
+   "risk_score": 0.1504
+  },
+  {
+   "geo_level_1_id": 13,
+   "buildings_test": 1863,
+   "actual_share": {
+    "1": 0.1938,
+    "2": 0.6774,
+    "3": 0.1288
+   },
+   "predicted_share": {
+    "1": 0.1503,
+    "2": 0.8154,
+    "3": 0.0344
+   },
+   "mean_probability": {
+    "1": 0.2025,
+    "2": 0.6562,
+    "3": 0.1413
+   },
+   "accuracy": 0.7488,
+   "risk_score": 0.1413
+  },
+  {
+   "geo_level_1_id": 25,
+   "buildings_test": 1105,
+   "actual_share": {
+    "1": 0.0733,
+    "2": 0.7801,
+    "3": 0.1466
+   },
+   "predicted_share": {
+    "1": 0.0326,
+    "2": 0.9357,
+    "3": 0.0317
+   },
+   "mean_probability": {
+    "1": 0.0815,
+    "2": 0.7808,
+    "3": 0.1377
+   },
+   "accuracy": 0.8036,
+   "risk_score": 0.1377
+  },
+  {
+   "geo_level_1_id": 22,
+   "buildings_test": 1243,
+   "actual_share": {
+    "1": 0.1215,
+    "2": 0.7562,
+    "3": 0.1223
+   },
+   "predicted_share": {
+    "1": 0.0748,
+    "2": 0.9059,
+    "3": 0.0193
+   },
+   "mean_probability": {
+    "1": 0.1214,
+    "2": 0.7448,
+    "3": 0.1338
+   },
+   "accuracy": 0.7836,
+   "risk_score": 0.1338
+  },
+  {
+   "geo_level_1_id": 30,
+   "buildings_test": 514,
+   "actual_share": {
+    "1": 0.0953,
+    "2": 0.7899,
+    "3": 0.1148
+   },
+   "predicted_share": {
+    "1": 0.0292,
+    "2": 0.965,
+    "3": 0.0058
+   },
+   "mean_probability": {
+    "1": 0.0824,
+    "2": 0.7985,
+    "3": 0.1192
+   },
+   "accuracy": 0.7879,
+   "risk_score": 0.1192
+  },
+  {
+   "geo_level_1_id": 20,
+   "buildings_test": 3515,
+   "actual_share": {
+    "1": 0.1903,
+    "2": 0.695,
+    "3": 0.1147
+   },
+   "predicted_share": {
+    "1": 0.1553,
+    "2": 0.8239,
+    "3": 0.0208
+   },
+   "mean_probability": {
+    "1": 0.1957,
+    "2": 0.6859,
+    "3": 0.1184
+   },
+   "accuracy": 0.7536,
+   "risk_score": 0.1184
+  },
+  {
+   "geo_level_1_id": 29,
+   "buildings_test": 74,
+   "actual_share": {
+    "1": 0.027,
+    "2": 0.8649,
+    "3": 0.1081
+   },
+   "predicted_share": {
+    "1": 0.0,
+    "2": 1.0,
+    "3": 0.0
+   },
+   "mean_probability": {
+    "1": 0.0249,
+    "2": 0.8639,
+    "3": 0.1112
+   },
+   "accuracy": 0.8649,
+   "risk_score": 0.1112
+  },
+  {
+   "geo_level_1_id": 1,
+   "buildings_test": 547,
+   "actual_share": {
+    "1": 0.1463,
+    "2": 0.7258,
+    "3": 0.128
+   },
+   "predicted_share": {
+    "1": 0.0987,
+    "2": 0.9013,
+    "3": 0.0
+   },
+   "mean_probability": {
+    "1": 0.1551,
+    "2": 0.7344,
+    "3": 0.1105
+   },
+   "accuracy": 0.7642,
+   "risk_score": 0.1105
+  },
+  {
+   "geo_level_1_id": 5,
+   "buildings_test": 542,
+   "actual_share": {
+    "1": 0.155,
+    "2": 0.7694,
+    "3": 0.0756
+   },
+   "predicted_share": {
+    "1": 0.083,
+    "2": 0.9114,
+    "3": 0.0055
+   },
+   "mean_probability": {
+    "1": 0.1538,
+    "2": 0.7499,
+    "3": 0.0963
+   },
+   "accuracy": 0.7841,
+   "risk_score": 0.0963
+  },
+  {
+   "geo_level_1_id": 24,
+   "buildings_test": 261,
+   "actual_share": {
+    "1": 0.2184,
+    "2": 0.6667,
+    "3": 0.1149
+   },
+   "predicted_share": {
+    "1": 0.0805,
+    "2": 0.9119,
+    "3": 0.0077
+   },
+   "mean_probability": {
+    "1": 0.1837,
+    "2": 0.7232,
+    "3": 0.0931
+   },
+   "accuracy": 0.682,
+   "risk_score": 0.0931
+  },
+  {
+   "geo_level_1_id": 26,
+   "buildings_test": 4589,
+   "actual_share": {
+    "1": 0.3617,
+    "2": 0.5589,
+    "3": 0.0793
+   },
+   "predicted_share": {
+    "1": 0.3585,
+    "2": 0.6252,
+    "3": 0.0163
+   },
+   "mean_probability": {
+    "1": 0.3575,
+    "2": 0.5548,
+    "3": 0.0876
+   },
+   "accuracy": 0.7171,
+   "risk_score": 0.0876
+  }
+ ]
+}

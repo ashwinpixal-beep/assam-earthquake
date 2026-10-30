@@ -1,0 +1,12 @@
+__pycache__
+**/__pycache__
+*.pyc
+.git
+.gitignore
+.venv
+.env
+.DS_Store
+research/
+tests/
+archive/
+run.log

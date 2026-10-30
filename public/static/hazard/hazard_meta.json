@@ -1,0 +1,29 @@
+{
+ "title": "Relative earthquake hazard, Assam and neighbouring NE India",
+ "source": "USGS earthquake catalogue (M4.0+), 2000-01-01 to 2026-10-26, from terranetra_quake/data/india_quakes_m4_2000_2026.csv",
+ "events_in_box": 1518,
+ "events_m5_plus": 153,
+ "box": {
+  "lon": [
+   88.0,
+   97.5
+  ],
+  "lat": [
+   22.5,
+   28.5
+  ]
+ },
+ "cell_deg": 0.25,
+ "smoothing_sigma_deg": 0.35,
+ "thresholds_log10_energy": {
+  "yellow_from": 7.029,
+  "red_from": 7.468
+ },
+ "cells": {
+  "red": 350,
+  "yellow": 188,
+  "green": 374
+ },
+ "method": "Gutenberg-Richter energy 10^(1.5M) per 0.25 deg cell, Gaussian-smoothed; terciles of the score across cells inside Assam.",
+ "disclaimer": "Ranks where past earthquakes of magnitude 4 and above have clustered. It is not a forecast, not a safety rating, and not a seismic design map. The catalogue is short and uneven, and magnitude-4 completeness varies by region."
+}

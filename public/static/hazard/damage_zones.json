@@ -1,0 +1,504 @@
+{
+ "title": "Gorkha 2015 earthquake damage by anonymised area",
+ "source": "DrivenData Richter's Predictor, 2015 Nepal (Gorkha) earthquake survey",
+ "basis": "held-out test split (20%), model not trained on these rows",
+ "grade_names": {
+  "1": "Low damage",
+  "2": "Medium damage",
+  "3": "Near-complete destruction"
+ },
+ "method": "Areas ranked by mean predicted probability of grade 3 (near-complete destruction); terciles of that score give red / yellow / green.",
+ "thresholds_risk_score": {
+  "yellow_from": 0.1504,
+  "red_from": 0.2757
+ },
+ "areas_total": 31,
+ "buildings_total": 52121,
+ "counts": {
+  "red": 10,
+  "yellow": 10,
+  "green": 11
+ },
+ "overall": {
+  "buildings_test": 52121,
+  "accuracy": 0.7568,
+  "actual_share": {
+   "1": 0.0964,
+   "2": 0.5689,
+   "3": 0.3347
+  },
+  "mean_probability": {
+   "1": 0.0954,
+   "2": 0.5695,
+   "3": 0.3352
+  }
+ },
+ "areas": [
+  {
+   "area": "Area 17",
+   "area_id": 17,
+   "zone": "red",
+   "buildings_surveyed": 4386,
+   "g3_share_actual": 0.8121,
+   "g3_share_predicted": 0.8958,
+   "mean_probability": {
+    "1": 0.0144,
+    "2": 0.1767,
+    "3": 0.8089
+   },
+   "accuracy": 0.8609,
+   "risk_score": 0.8089
+  },
+  {
+   "area": "Area 18",
+   "area_id": 18,
+   "zone": "red",
+   "buildings_surveyed": 653,
+   "g3_share_actual": 0.732,
+   "g3_share_predicted": 0.8178,
+   "mean_probability": {
+    "1": 0.0207,
+    "2": 0.2432,
+    "3": 0.7361
+   },
+   "accuracy": 0.7917,
+   "risk_score": 0.7361
+  },
+  {
+   "area": "Area 21",
+   "area_id": 21,
+   "zone": "red",
+   "buildings_surveyed": 2938,
+   "g3_share_actual": 0.5916,
+   "g3_share_predicted": 0.6481,
+   "mean_probability": {
+    "1": 0.0247,
+    "2": 0.3878,
+    "3": 0.5874
+   },
+   "accuracy": 0.7383,
+   "risk_score": 0.5874
+  },
+  {
+   "area": "Area 8",
+   "area_id": 8,
+   "zone": "red",
+   "buildings_surveyed": 3775,
+   "g3_share_actual": 0.5272,
+   "g3_share_predicted": 0.5475,
+   "mean_probability": {
+    "1": 0.0341,
+    "2": 0.452,
+    "3": 0.5138
+   },
+   "accuracy": 0.6911,
+   "risk_score": 0.5138
+  },
+  {
+   "area": "Area 27",
+   "area_id": 27,
+   "zone": "red",
+   "buildings_surveyed": 2561,
+   "g3_share_actual": 0.4936,
+   "g3_share_predicted": 0.5209,
+   "mean_probability": {
+    "1": 0.0369,
+    "2": 0.4806,
+    "3": 0.4825
+   },
+   "accuracy": 0.706,
+   "risk_score": 0.4825
+  },
+  {
+   "area": "Area 10",
+   "area_id": 10,
+   "zone": "red",
+   "buildings_surveyed": 4430,
+   "g3_share_actual": 0.3939,
+   "g3_share_predicted": 0.3476,
+   "mean_probability": {
+    "1": 0.0534,
+    "2": 0.5474,
+    "3": 0.3992
+   },
+   "accuracy": 0.7436,
+   "risk_score": 0.3992
+  },
+  {
+   "area": "Area 11",
+   "area_id": 11,
+   "zone": "red",
+   "buildings_surveyed": 1611,
+   "g3_share_actual": 0.3942,
+   "g3_share_predicted": 0.3147,
+   "mean_probability": {
+    "1": 0.0427,
+    "2": 0.577,
+    "3": 0.3803
+   },
+   "accuracy": 0.7052,
+   "risk_score": 0.3803
+  },
+  {
+   "area": "Area 28",
+   "area_id": 28,
+   "zone": "red",
+   "buildings_surveyed": 44,
+   "g3_share_actual": 0.4318,
+   "g3_share_predicted": 0.25,
+   "mean_probability": {
+    "1": 0.0081,
+    "2": 0.6134,
+    "3": 0.3785
+   },
+   "accuracy": 0.6364,
+   "risk_score": 0.3785
+  },
+  {
+   "area": "Area 3",
+   "area_id": 3,
+   "zone": "red",
+   "buildings_surveyed": 1550,
+   "g3_share_actual": 0.3652,
+   "g3_share_predicted": 0.2819,
+   "mean_probability": {
+    "1": 0.0369,
+    "2": 0.6015,
+    "3": 0.3616
+   },
+   "accuracy": 0.7116,
+   "risk_score": 0.3616
+  },
+  {
+   "area": "Area 7",
+   "area_id": 7,
+   "zone": "red",
+   "buildings_surveyed": 3811,
+   "g3_share_actual": 0.3637,
+   "g3_share_predicted": 0.28,
+   "mean_probability": {
+    "1": 0.0548,
+    "2": 0.5866,
+    "3": 0.3586
+   },
+   "accuracy": 0.7746,
+   "risk_score": 0.3586
+  },
+  {
+   "area": "Area 2",
+   "area_id": 2,
+   "zone": "yellow",
+   "buildings_surveyed": 211,
+   "g3_share_actual": 0.2654,
+   "g3_share_predicted": 0.1991,
+   "mean_probability": {
+    "1": 0.0945,
+    "2": 0.6298,
+    "3": 0.2757
+   },
+   "accuracy": 0.6777,
+   "risk_score": 0.2757
+  },
+  {
+   "area": "Area 6",
+   "area_id": 6,
+   "zone": "yellow",
+   "buildings_surveyed": 4863,
+   "g3_share_actual": 0.2394,
+   "g3_share_predicted": 0.1594,
+   "mean_probability": {
+    "1": 0.0812,
+    "2": 0.6731,
+    "3": 0.2456
+   },
+   "accuracy": 0.7767,
+   "risk_score": 0.2456
+  },
+  {
+   "area": "Area 23",
+   "area_id": 23,
+   "zone": "yellow",
+   "buildings_surveyed": 217,
+   "g3_share_actual": 0.2535,
+   "g3_share_predicted": 0.0507,
+   "mean_probability": {
+    "1": 0.0564,
+    "2": 0.7019,
+    "3": 0.2417
+   },
+   "accuracy": 0.682,
+   "risk_score": 0.2417
+  },
+  {
+   "area": "Area 15",
+   "area_id": 15,
+   "zone": "yellow",
+   "buildings_surveyed": 460,
+   "g3_share_actual": 0.1783,
+   "g3_share_predicted": 0.0261,
+   "mean_probability": {
+    "1": 0.0638,
+    "2": 0.7207,
+    "3": 0.2155
+   },
+   "accuracy": 0.7543,
+   "risk_score": 0.2155
+  },
+  {
+   "area": "Area 12",
+   "area_id": 12,
+   "zone": "yellow",
+   "buildings_surveyed": 630,
+   "g3_share_actual": 0.2286,
+   "g3_share_predicted": 0.0571,
+   "mean_probability": {
+    "1": 0.0523,
+    "2": 0.7332,
+    "3": 0.2145
+   },
+   "accuracy": 0.7143,
+   "risk_score": 0.2145
+  },
+  {
+   "area": "Area 16",
+   "area_id": 16,
+   "zone": "yellow",
+   "buildings_surveyed": 896,
+   "g3_share_actual": 0.2009,
+   "g3_share_predicted": 0.0759,
+   "mean_probability": {
+    "1": 0.0458,
+    "2": 0.7436,
+    "3": 0.2106
+   },
+   "accuracy": 0.798,
+   "risk_score": 0.2106
+  },
+  {
+   "area": "Area 19",
+   "area_id": 19,
+   "zone": "yellow",
+   "buildings_surveyed": 87,
+   "g3_share_actual": 0.1839,
+   "g3_share_predicted": 0.0345,
+   "mean_probability": {
+    "1": 0.0776,
+    "2": 0.7233,
+    "3": 0.1992
+   },
+   "accuracy": 0.7586,
+   "risk_score": 0.1992
+  },
+  {
+   "area": "Area 4",
+   "area_id": 4,
+   "zone": "yellow",
+   "buildings_surveyed": 2858,
+   "g3_share_actual": 0.1896,
+   "g3_share_predicted": 0.0609,
+   "mean_probability": {
+    "1": 0.0313,
+    "2": 0.7715,
+    "3": 0.1971
+   },
+   "accuracy": 0.8016,
+   "risk_score": 0.1971
+  },
+  {
+   "area": "Area 14",
+   "area_id": 14,
+   "zone": "yellow",
+   "buildings_surveyed": 331,
+   "g3_share_actual": 0.145,
+   "g3_share_predicted": 0.0211,
+   "mean_probability": {
+    "1": 0.1074,
+    "2": 0.7254,
+    "3": 0.1672
+   },
+   "accuracy": 0.7492,
+   "risk_score": 0.1672
+  },
+  {
+   "area": "Area 9",
+   "area_id": 9,
+   "zone": "yellow",
+   "buildings_surveyed": 755,
+   "g3_share_actual": 0.1828,
+   "g3_share_predicted": 0.0662,
+   "mean_probability": {
+    "1": 0.1243,
+    "2": 0.7131,
+    "3": 0.1626
+   },
+   "accuracy": 0.743,
+   "risk_score": 0.1626
+  },
+  {
+   "area": "Area 0",
+   "area_id": 0,
+   "zone": "green",
+   "buildings_surveyed": 801,
+   "g3_share_actual": 0.1336,
+   "g3_share_predicted": 0.0187,
+   "mean_probability": {
+    "1": 0.08,
+    "2": 0.7696,
+    "3": 0.1504
+   },
+   "accuracy": 0.7728,
+   "risk_score": 0.1504
+  },
+  {
+   "area": "Area 13",
+   "area_id": 13,
+   "zone": "green",
+   "buildings_surveyed": 1863,
+   "g3_share_actual": 0.1288,
+   "g3_share_predicted": 0.0344,
+   "mean_probability": {
+    "1": 0.2025,
+    "2": 0.6562,
+    "3": 0.1413
+   },
+   "accuracy": 0.7488,
+   "risk_score": 0.1413
+  },
+  {
+   "area": "Area 25",
+   "area_id": 25,
+   "zone": "green",
+   "buildings_surveyed": 1105,
+   "g3_share_actual": 0.1466,
+   "g3_share_predicted": 0.0317,
+   "mean_probability": {
+    "1": 0.0815,
+    "2": 0.7808,
+    "3": 0.1377
+   },
+   "accuracy": 0.8036,
+   "risk_score": 0.1377
+  },
+  {
+   "area": "Area 22",
+   "area_id": 22,
+   "zone": "green",
+   "buildings_surveyed": 1243,
+   "g3_share_actual": 0.1223,
+   "g3_share_predicted": 0.0193,
+   "mean_probability": {
+    "1": 0.1214,
+    "2": 0.7448,
+    "3": 0.1338
+   },
+   "accuracy": 0.7836,
+   "risk_score": 0.1338
+  },
+  {
+   "area": "Area 30",
+   "area_id": 30,
+   "zone": "green",
+   "buildings_surveyed": 514,
+   "g3_share_actual": 0.1148,
+   "g3_share_predicted": 0.0058,
+   "mean_probability": {
+    "1": 0.0824,
+    "2": 0.7985,
+    "3": 0.1192
+   },
+   "accuracy": 0.7879,
+   "risk_score": 0.1192
+  },
+  {
+   "area": "Area 20",
+   "area_id": 20,
+   "zone": "green",
+   "buildings_surveyed": 3515,
+   "g3_share_actual": 0.1147,
+   "g3_share_predicted": 0.0208,
+   "mean_probability": {
+    "1": 0.1957,
+    "2": 0.6859,
+    "3": 0.1184
+   },
+   "accuracy": 0.7536,
+   "risk_score": 0.1184
+  },
+  {
+   "area": "Area 29",
+   "area_id": 29,
+   "zone": "green",
+   "buildings_surveyed": 74,
+   "g3_share_actual": 0.1081,
+   "g3_share_predicted": 0.0,
+   "mean_probability": {
+    "1": 0.0249,
+    "2": 0.8639,
+    "3": 0.1112
+   },
+   "accuracy": 0.8649,
+   "risk_score": 0.1112
+  },
+  {
+   "area": "Area 1",
+   "area_id": 1,
+   "zone": "green",
+   "buildings_surveyed": 547,
+   "g3_share_actual": 0.128,
+   "g3_share_predicted": 0.0,
+   "mean_probability": {
+    "1": 0.1551,
+    "2": 0.7344,
+    "3": 0.1105
+   },
+   "accuracy": 0.7642,
+   "risk_score": 0.1105
+  },
+  {
+   "area": "Area 5",
+   "area_id": 5,
+   "zone": "green",
+   "buildings_surveyed": 542,
+   "g3_share_actual": 0.0756,
+   "g3_share_predicted": 0.0055,
+   "mean_probability": {
+    "1": 0.1538,
+    "2": 0.7499,
+    "3": 0.0963
+   },
+   "accuracy": 0.7841,
+   "risk_score": 0.0963
+  },
+  {
+   "area": "Area 24",
+   "area_id": 24,
+   "zone": "green",
+   "buildings_surveyed": 261,
+   "g3_share_actual": 0.1149,
+   "g3_share_predicted": 0.0077,
+   "mean_probability": {
+    "1": 0.1837,
+    "2": 0.7232,
+    "3": 0.0931
+   },
+   "accuracy": 0.682,
+   "risk_score": 0.0931
+  },
+  {
+   "area": "Area 26",
+   "area_id": 26,
+   "zone": "green",
+   "buildings_surveyed": 4589,
+   "g3_share_actual": 0.0793,
+   "g3_share_predicted": 0.0163,
+   "mean_probability": {
+    "1": 0.3575,
+    "2": 0.5548,
+    "3": 0.0876
+   },
+   "accuracy": 0.7171,
+   "risk_score": 0.0876
+  }
+ ],
+ "disclaimer": "Reported damage from the 2015 Gorkha earthquake, Nepal. Areas are anonymised survey IDs (geo level 1) and are not Assam districts. This is not a forecast and not a structural or safety assessment."
+}
