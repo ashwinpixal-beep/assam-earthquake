@@ -128,6 +128,7 @@ def test_05_example_panel_runs_model(page, server):
     assert page.get_attribute("#example-btn", "aria-expanded") == "true"
     assert page.locator("#e-rows tbody tr").count() == 30
     assert page.locator("#e-cm tbody tr").count() == 3
+    assert "%" in page.locator("#e-acc").inner_text()
 
 
 def test_06_2d_page_and_map(page, server):
@@ -147,6 +148,12 @@ def test_07_hazard_cells_drawn(page, server):
     cells = int(page.locator("#cellCount").inner_text().split()[0])
     assert cells == 912
     assert page.locator("#map path.leaflet-interactive").count() > 100
+    # the load pill must clear once the grid is drawn
+    page.wait_for_function(
+        "() => { const el = document.getElementById('status');"
+        " return !el || el.hidden || el.textContent.trim() === ''; }",
+        timeout=15000,
+    )
 
 
 def test_08_events_layer_toggles(page, server):

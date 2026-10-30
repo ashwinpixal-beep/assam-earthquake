@@ -249,7 +249,8 @@
         .catch(() => {});
 
       window.__cells = layer;
-      setStatus('');
+      setStatus(`${feats.length} hazard cells loaded. Click a cell for its score.`);
+      setTimeout(() => setStatus(''), 2600);
     })
     .catch((err) => setStatus('Hazard grid unavailable — ' + err.message));
 
