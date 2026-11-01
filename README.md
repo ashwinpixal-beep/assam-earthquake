@@ -1,12 +1,17 @@
-# Assam building damage and earthquake hazard
+# Worldwide earthquake hazard and building damage
 
-A single web app with three pages:
+A single web app with two map pages, both covering the whole world:
 
 | Page | What it does |
 |---|---|
-| `/` | **3D building map of Assam.** 13,302,299 Overture footprints streamed as 0.1° binary tiles. Click a building to get a damage grade from the model. The **Example** button scores 30 real held-out survey records and compares them with the recorded grade. |
-| `/2d` | **Earthquake hazard map.** 912 hazard cells (red / yellow / green) from the USGS M4+ catalogue, 153 magnitude 5+ events, and the 2015 Gorkha damage table for 31 anonymised areas. |
+| `/globe` (also `/`) | **The whole world in 3D.** 177 countries, the 30,648-event global catalogue, and 6,000 hazard cells painted onto one sphere. Click anywhere on the globe for a damage-grade prediction for the building profile you describe. The **Example** button scores 30 real held-out survey records and checks the predictions against the recorded grades. |
+| `/world` (also `/2d`) | **The whole world in 2D.** The same catalogue and hazard grid on a Leaflet map, with country outlines, a magnitude filter, layer toggles and a basemap toggle. |
 | `/docs` | **API documentation.** Every endpoint, with an example request and response. |
+
+The Assam-only pages (`/` 3D building map of 13.3 million footprints, `/2d` regional
+hazard map) are retired: those routes now redirect to `/globe` and `/world`. Their
+tiles, hazard grid, damage table and endpoints are still on disk and still served,
+so nothing that used them breaks — but no page links to them any more.
 
 The damage model predicts the 2015 Gorkha earthquake damage grade of a building
 (1 = low, 2 = medium, 3 = near-complete destruction) from the DrivenData
@@ -99,20 +104,24 @@ cached and marked `X-Cache: hit`.
 
 ```
 app.py                     FastAPI app: pages, static files, API
+world.py                   world layer: countries, cities, global catalogue, 2° hazard grid
 model.py                   DamageModel class used by the saved bundle
 start.py                   one-click launcher
 models/damage_model.joblib  trained ensemble (LightGBM + XGBoost), about 25 MB
 data/                      areas, districts, examples, metrics, options, results
-data/quakes/               USGS M4+ catalogue, 2000–2026 (3.3 MB)
-public/index.html          3D map page        (/)
-public/2d.html             2D hazard page     (/2d)
+data/quakes/               USGS M4+ catalogue, 2000–2026 (3.3 MB) + global M5/M6 catalogue (1.1 MB)
+public/index.html          retired Assam 3D page (not linked)
+public/2d.html             retired Assam 2D page (not linked)
+public/globe.html          3D world page      (/globe)
+public/world.html          2D world page      (/world)
+public/static/world/       globe.js, examples.js, countries.json, cities.json
 public/static/assam3d/     viewer.js, boundary, three.js, tiles (837 × .bin)
 public/static/hazard/      hazard grid, M5+ events, meta, damage zones
 public/static/shared/      shared.js
 public/static/vendor/      Leaflet 1.9.4
 scripts/                   rebuild hazard data, damage zones, examples
 research/                  training experiments (reference only)
-tests/                     browser checks (Playwright, 15 checks)
+tests/                     browser checks (Playwright, 20 checks)
 archive/                   earlier project page and lab (not served)
 ```
 
@@ -121,6 +130,7 @@ archive/                   earlier project page and lab (not served)
 ```bash
 python scripts/build_hazard.py         # hazard grid + M5+ events + meta (needs shapely)
 python scripts/build_damage_zones.py   # damage zones from data/areas.json
+python scripts/build_world_data.py     # world catalogue from the USGS CSVs in data/quakes/
 ```
 
 The model itself, `data/examples.json` and `data/areas.json` are built from the
@@ -140,28 +150,48 @@ python -m playwright install chromium
 pytest tests/test_app.py -v
 ```
 
-15 checks: the three pages, the 3D loader and tile total, the Example panel, the
-hazard cells and event layer, the 31-row damage table and its sorting, the docs
-page, and the API (`health`, `predict`, `422` validation, redirects, sideways
-scroll). See `tests/README.md`.
+20 checks: both world pages, the redirects that retired the Assam pages, the
+globe's data and canvas, click-to-predict, the Example panel (30 rows, 3×3
+confusion matrix), the world map's layers and magnitude filter, the docs page,
+and the API (`health`, `predict`, `422` validation, `examples`, world status /
+events / hazard / countries, sideways scroll). Checks that need a GPU skip
+themselves when the browser has no WebGL. See `tests/README.md`.
 
 ## Method notes
 
-**Hazard layer.** Gutenberg–Richter energy `10^(1.5M)` per 0.25° cell, Gaussian
-smoothed (σ = 0.35°), then split into terciles of the score across cells inside
-Assam: red = top third, yellow = middle, green = bottom. It ranks where past
-M4+ events clustered. It is **not** a forecast and **not** a seismic design map.
+**World layer.** The global catalogue is the USGS record as packaged in
+`liveatlasearth/earthquake-catalogs` (CC BY 4.0): M5.0+ worldwide 2016–2025 plus
+M6.0+ since 1900, 30,648 events, encoded as compact rows in
+`data/quakes/world_catalogue.json`. The world hazard grid uses the same
+Gutenberg–Richter scoring as Assam on a coarser 2° grid with a 2° Gaussian
+smoothing, keeps the 6,000 highest-scoring cells and splits them into terciles
+(9.209 / 10.365 on the log₁₀ energy scale). The live USGS feed is still tried
+first; when the host has no outbound access the bundled catalogue is served and
+`meta.warming` says so. The damage-grade prediction for a world click uses the
+same model and the same building profile, because the training survey has no
+coordinates — the latitude and longitude are shown for reference only, and both
+world pages say so in the UI.
+
+**Hazard layer.** Gutenberg–Richter energy `10^(1.5M)` per cell, Gaussian
+smoothed, then split into terciles of the score: red = top third, yellow =
+middle, green = bottom. The world grid uses 2° cells (σ = 2°); the retired Assam
+page used 0.25° cells (σ = 0.35°). Both rank where past M4+/M5+ events
+clustered. Neither is a forecast or a seismic design map.
 
 **Damage model.** Statistical estimate from 2015 survey records. It is **not** a
 structural assessment or a safety certificate. The survey data has no
-coordinates, so survey buildings cannot be placed on the Assam map; the 3D map
-shows real footprints and density, not true heights (almost none are recorded,
-so the rest are estimated at 4 m).
+coordinates, so a survey building cannot be placed on a map: on the globe the
+coordinates are shown for reference and the prediction follows the building
+profile you enter. The Example panel is the honest check — it scores real
+held-out records and compares them with the recorded grade.
 
 ## Data and sources
 
-- Building footprints: Overture Maps Foundation, release 2026-10-21.0 (ODbL).
-  Boundary: Overture divisions, region IN-AS.
+- Building footprints (retired Assam page, still served): Overture Maps
+  Foundation, release 2026-10-21.0 (ODbL), region IN-AS.
+- Country outlines: Natural Earth 1:110m (public domain), via `world-atlas`.
+- World catalogue: USGS, packaged by Live Atlas, CC BY 4.0.
+- Cities: GeoNames, population 100,000+.
 - Earthquake catalogue: USGS, M4.0+ 2000-01-01 to 2026-10-26.
 - Survey data: DrivenData *Richter's Predictor* (2015 Nepal Earthquake Open Data
   Portal).

@@ -25,9 +25,33 @@ const fmtInt = (n) => Number(n).toLocaleString('en-US');
 
 // ---------------------------------------------------------------- renderer and scene
 const container = $('scene');
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-container.appendChild(renderer.domElement);
+let renderer;
+try {
+  renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  container.appendChild(renderer.domElement);
+} catch (err) {
+  // No WebGL: say so instead of leaving the loader spinning forever. The counts still load,
+  // and the 2D pages need no GPU at all.
+  const card = document.querySelector('.lcard');
+  if (card) {
+    card.innerHTML = '<div class="ltitle">3D needs WebGL</div>'
+      + '<div class="lsub">This browser or GPU has WebGL disabled, so the building map cannot be drawn. '
+      + 'Try the <a href="/2d" style="color:#f6d28a">2D hazard map</a>, which needs no GPU.</div>';
+  }
+  window.__noGL = true;
+  $('status').textContent = 'WebGL unavailable — the 2D pages still work.';
+  // Still surface the dataset size, so the page is not a dead end.
+  fetch(BASE + 'index.json')
+    .then((r) => r.json())
+    .then((idx) => {
+      $('st-total').textContent = fmtInt(idx.total_buildings);
+      $('st-est').textContent = fmtInt(idx.estimated_height_buildings);
+      $('st-tiles-all').textContent = fmtInt(idx.tiles.length);
+    })
+    .catch(() => {});
+  throw err;
+}
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color('#dfe8ef');
