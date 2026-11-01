@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Web app for building damage grade prediction and the Assam hazard maps.
+"""Web app for the worldwide earthquake hazard maps and the damage-grade model.
 
 Run from the project folder:
     python3 start.py
@@ -7,10 +7,13 @@ Run from the project folder:
     uvicorn app:app --host 0.0.0.0 --port 8000
 
 Pages
-  GET  /                 3D building map of Assam (Overture Maps footprints)
-  GET  /2d               2D earthquake hazard map + 2015 Gorkha damage table
+  GET  /globe            the whole world in 3D: countries, catalogue, hazard grid
+  GET  /world            the whole world in 2D (Leaflet)
   GET  /docs             API documentation
-  GET  /3d, /lab        redirect to /
+  GET  /, /2d, /3d, /lab  redirect to the world pages
+
+The Assam-only pages (/ and /2d) are retired. Their files, hazard grid and
+endpoints are still on disk and still served, but nothing links to them.
 
 API
   GET  /api/health       status
@@ -25,6 +28,11 @@ API
   GET  /api/hazard       hazard method, thresholds and cell counts
   GET  /api/events       M5+ earthquake events (GeoJSON)
   GET  /api/damage-zones Gorkha 2015 damage zones by anonymised area
+  GET  /api/world/status       what the world pages have loaded
+  GET  /api/world/countries    Natural Earth 1:110m countries as lon/lat rings
+  GET  /api/world/cities       GeoNames cities, population >= 100,000
+  GET  /api/world/events       global M5+ / M6+ catalogue (live USGS, bundled fallback)
+  GET  /api/world/hazard       world hazard grid computed from that catalogue
 """
 from __future__ import annotations
 
@@ -44,6 +52,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = HERE
 sys.path.insert(0, ROOT)
 import model as dm  # noqa: E402  (provides DamageModel used by the saved bundle)
+import world as wd  # noqa: E402  (world-scale data for the /globe and /world pages)
 
 MODEL_PATH = os.path.join(ROOT, "models", "damage_model.joblib")
 DATA = os.path.join(ROOT, "data")
@@ -51,9 +60,12 @@ PUBLIC = os.path.join(ROOT, "public")
 HAZARD = os.path.join(PUBLIC, "static", "hazard")
 
 app = FastAPI(
-    title="Assam building damage and earthquake hazard",
-    version="1.0",
-    description="3D building map of Assam, 2D hazard map, and a building damage-grade model.",
+    title="Worldwide earthquake hazard and building damage",
+    version="1.2",
+    description=(
+        "World-scale 3D and 2D views of the global M5+/M6+ earthquake catalogue, a "
+        "2 degree hazard grid, country outlines, and a building damage-grade model."
+    ),
     # /docs is our own human-readable page, so the generated Swagger UI is turned off.
     docs_url=None,
     redoc_url=None,
@@ -152,12 +164,23 @@ GRADE_HELP = {
 # ---------------------------------------------------------------- pages
 @app.get("/")
 def index():
-    return FileResponse(os.path.join(PUBLIC, "index.html"))
+    # the site is the world map now; the Assam-only pages are retired
+    return RedirectResponse("/globe", status_code=302)
 
 
 @app.get("/2d")
 def hazard_2d():
-    return FileResponse(os.path.join(PUBLIC, "2d.html"))
+    return RedirectResponse("/world", status_code=302)
+
+
+@app.get("/globe")
+def globe():
+    return FileResponse(os.path.join(PUBLIC, "globe.html"))
+
+
+@app.get("/world")
+def world_2d():
+    return FileResponse(os.path.join(PUBLIC, "world.html"))
 
 
 @app.get("/docs")
@@ -167,12 +190,12 @@ def docs():
 
 @app.get("/3d")
 def assam_3d_redirect():
-    return RedirectResponse("/", status_code=301)
+    return RedirectResponse("/globe", status_code=301)
 
 
 @app.get("/lab")
 def lab_redirect():
-    return RedirectResponse("/", status_code=301)
+    return RedirectResponse("/globe", status_code=301)
 
 
 # ---------------------------------------------------------------- model API
@@ -182,6 +205,7 @@ def health():
         "ok": True,
         "model_loaded": os.path.exists(MODEL_PATH),
         "hazard_ready": os.path.exists(os.path.join(HAZARD, "hazard_grid.geojson")),
+        "world_ready": os.path.exists(os.path.join(PUBLIC, "static", "world", "countries.json")),
     }
 
 
@@ -336,13 +360,48 @@ def damage_zones():
     return _read_hazard("damage_zones.json")
 
 
+# ---------------------------------------------------------------- world API
+@app.get("/api/world/status")
+def world_status():
+    return wd.status()
+
+
+@app.get("/api/world/countries")
+def world_countries():
+    return wd.countries()
+
+
+@app.get("/api/world/countries.geojson")
+def world_countries_geojson():
+    return wd.countries_geojson()
+
+
+@app.get("/api/world/cities")
+def world_cities(min_pop: int = Query(100_000, ge=0), limit: int = Query(5000, ge=1, le=20000)):
+    rows = [c for c in wd.cities()["cities"] if c["pop"] >= min_pop]
+    rows.sort(key=lambda c: -c["pop"])
+    return {"count": len(rows[:limit]), "min_pop": min_pop, "cities": rows[:limit]}
+
+
+@app.get("/api/world/events")
+def world_events(min_mag: float = Query(5.5, ge=1.0, le=9.9),
+                 limit: int = Query(6000, ge=1, le=40000)):
+    return wd.events_payload(min_mag=min_mag, limit=limit)
+
+
+@app.get("/api/world/hazard")
+def world_hazard(refresh: bool = False):
+    grid = wd.hazard_grid(force=refresh)
+    return {"cells": grid["cells"], "meta": grid["meta"]}
+
+
 # ---------------------------------------------------------------- docs page
 DOCS_HTML = """<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>API documentation · Assam damage and hazard</title>
+<title>API documentation · Worldwide earthquake hazard</title>
 <style>
   :root { --ink:#1c2530; --ink2:#3b4856; --muted:#6b7785; --line:#dfe5ec; --navy:#14213d; --amber:#b7791f; --gold:#d69e2e; }
   * { box-sizing: border-box; }
@@ -373,16 +432,18 @@ DOCS_HTML = """<!doctype html>
 </head>
 <body>
 <header><div class="wrap">
-  <div><h1>API documentation</h1><p>Assam 3D building map and earthquake hazard · FastAPI</p></div>
-  <nav><a href="/">3D map</a><a href="/2d">2D hazard</a></nav>
+  <div><h1>API documentation</h1><p>Worldwide earthquake hazard and building damage · FastAPI</p></div>
+  <nav><a href="/globe">World 3D</a><a href="/world">World 2D</a></nav>
 </div></header>
 <main class="wrap">
   <p>Every endpoint returns JSON except the three pages. The machine-readable schema is at
   <a href="/openapi.json"><code>/openapi.json</code></a>; this page is the human-readable reference.</p>
 
   <h2>Pages</h2>
-  <div class="ep"><span class="verb get">GET</span><code class="path">/</code><p>3D building map of Assam. Streams 0.1° tiles of 13,302,299 Overture footprints.</p></div>
-  <div class="ep"><span class="verb get">GET</span><code class="path">/2d</code><p>2D earthquake hazard map (red / yellow / green cells, M5+ events) and the Gorkha 2015 damage table.</p></div>
+  <div class="ep"><span class="verb get">GET</span><code class="path">/</code><p>Redirects to <code>/globe</code>.</p></div>
+  <div class="ep"><span class="verb get">GET</span><code class="path">/2d</code><p>Redirects to <code>/world</code>.</p></div>
+  <div class="ep"><span class="verb get">GET</span><code class="path">/globe</code><p>The whole world in 3D: 177 country outlines on a sphere, 30,648 catalogued earthquakes, 6,000 hazard cells, and a damage-grade prediction for any point you click.</p></div>
+  <div class="ep"><span class="verb get">GET</span><code class="path">/world</code><p>The same data as a 2D world map: hazard cells, M5+ events with a magnitude slider, country outlines, and the strongest events in the catalogue.</p></div>
   <div class="ep"><span class="verb get">GET</span><code class="path">/docs</code><p>This page.</p></div>
 
   <h2>Model</h2>
@@ -421,23 +482,45 @@ DOCS_HTML = """<!doctype html>
   <div class="ep"><span class="verb get">GET</span><code class="path">/api/events</code><p>153 magnitude 5+ events in the map box as a GeoJSON FeatureCollection of points (mag, time, depth, place).</p></div>
   <div class="ep"><span class="verb get">GET</span><code class="path">/api/damage-zones</code><p>Gorkha 2015 damage by anonymised area: zone, buildings surveyed, grade-3 share, accuracy, risk score.</p></div>
 
+  <h2>World</h2>
+  <div class="ep"><span class="verb get">GET</span><code class="path">/api/world/status</code><p>What the world pages have loaded: countries, cities, catalogue coverage (global or bundled), hazard cells and the detail build.</p></div>
+  <div class="ep"><span class="verb get">GET</span><code class="path">/api/world/countries</code><p>177 Natural Earth 1:110m countries as lon/lat rings (10,583 points, 176 KB), plus licence and source.</p></div>
+  <div class="ep"><span class="verb get">GET</span><code class="path">/api/world/countries.geojson</code><p>The same countries as a GeoJSON FeatureCollection of MultiPolygons, for Leaflet.</p></div>
+  <div class="ep"><span class="verb get">GET</span><code class="path">/api/world/cities</code>
+    <p>GeoNames cities, largest first.</p>
+    <table><tr><th>Query</th><th>Type</th><th>Default</th><th>Meaning</th></tr>
+      <tr><td><code>min_pop</code></td><td>int</td><td>100000</td><td>Population floor</td></tr>
+      <tr><td><code>limit</code></td><td>int 1–20000</td><td>5000</td><td>Rows returned</td></tr></table>
+  </div>
+  <div class="ep"><span class="verb get">GET</span><code class="path">/api/world/events</code>
+    <p>The earthquake catalogue: live USGS FDSN query M5.5+ since 2000 when the host has outbound access, otherwise the bundled global catalogue (M5.0+ 2016–2025 and M6.0+ since 1900, 30,648 events). The response says which one you got.</p>
+    <table><tr><th>Query</th><th>Type</th><th>Default</th><th>Meaning</th></tr>
+      <tr><td><code>min_mag</code></td><td>float</td><td>5.5</td><td>Magnitude floor</td></tr>
+      <tr><td><code>limit</code></td><td>int</td><td>6000</td><td>Events returned, strongest first</td></tr></table>
+    <pre>{"count":1717,"coverage":"global","source":"USGS earthquake catalogue, packaged by Live Atlas",
+ "events":[{"lon":-73.4,"lat":-36.5,"mag":9.5,"depth":25,"time":"1960-05-22","place":"1960 Great Chilean Earthquake"}]}</pre>
+  </div>
+  <div class="ep"><span class="verb get">GET</span><code class="path">/api/world/hazard</code><p>2° hazard grid computed from that catalogue: 6,000 cells with class, score, event count and largest magnitude, plus the method, tercile thresholds and disclaimer. <code>?refresh=true</code> recomputes.</p></div>
+
   <h2>Static files</h2>
   <table>
     <tr><th>Path</th><th>Contents</th></tr>
-    <tr><td><code>/static/assam3d/tiles/index.json</code></td><td>Tile index: <code>total_buildings</code> 13,302,299, 837 tiles</td></tr>
-    <tr><td><code>/static/assam3d/tiles/t_&lt;tx&gt;_&lt;ty&gt;.bin</code></td><td>Binary building tile (header + xyz floats)</td></tr>
-    <tr><td><code>/static/hazard/hazard_grid.geojson</code></td><td>912 hazard cells with <code>cls</code>, <code>score</code>, <code>events_m4plus</code>, <code>max_mag</code></td></tr>
-    <tr><td><code>/static/hazard/events_m5plus.geojson</code></td><td>M5+ events</td></tr>
+    <tr><td><code>/static/world/globe.js</code></td><td>The 3D globe: country texture, event sprites, hazard wash, click-to-predict</td></tr>
+    <tr><td><code>/static/world/countries.json</code></td><td>177 countries as lon/lat rings (Natural Earth 1:110m)</td></tr>
+    <tr><td><code>/static/world/cities.json</code></td><td>4,442 cities, population 100,000+ (GeoNames)</td></tr>
+    <tr><td><code>data/quakes/world_catalogue.json</code></td><td>30,648 events, compact integer encoding, CC BY 4.0</td></tr>
   </table>
 
   <h2>Notes</h2>
   <div class="note">
     <b>Not a safety certificate.</b> Grades are statistical estimates from the 2015 Gorkha survey.
+    On the world pages the prediction depends on the building profile you enter, not on the coordinates,
+    because the training survey has no coordinates.
     The hazard layer ranks where M4+ events have clustered since 2000; it is not a forecast and not a
-    design-level seismic hazard map. Survey areas are anonymised and are not Assam districts.
+    design-level seismic hazard map.
   </div>
 </main>
-<footer class="wrap">FastAPI app · served by <code>uvicorn app:app</code> · build tag damage-risk-site 2026-10-28</footer>
+<footer class="wrap">FastAPI app · served by <code>uvicorn app:app</code> · build tag world-hazard 2026-11-01</footer>
 </body>
 </html>
 """

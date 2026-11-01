@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="World earthquake hazard map: 6,000 hazard cells, the global M5+/M6+ catalogue and country outlines, computed from the USGS record.">
+<title>Earthquake hazard · World</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%2314213d'/%3E%3Ccircle cx='8' cy='8' r='3' fill='%23d69e2e'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="/static/vendor/leaflet/leaflet.css">
+<style>
+  :root { --ink:#1c2530; --ink2:#3b4856; --muted:#6b7785; --line:#dfe5ec; --navy:#14213d; --navy2:#1f3358; --amber:#b7791f; --gold:#d69e2e; --red:#c53030; --yellow:#d69e2e; --green:#2f855a; }
+  * { box-sizing: border-box; }
+  html, body { margin:0; height:100%; }
+  body { background:#f6f8fb; color:var(--ink); font:14px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif; -webkit-font-smoothing:antialiased; }
+  :focus-visible { outline:2px solid var(--gold); outline-offset:2px; }
+
+  .shell { display:grid; grid-template-rows:auto minmax(0,1fr); height:100vh; }
+  header { background:linear-gradient(135deg,var(--navy),var(--navy2)); color:#fff; padding:12px 20px; display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+  header h1 { margin:0; font:700 18px Georgia,"Times New Roman",serif; }
+  header .sub { color:rgba(255,255,255,.72); font-size:12.5px; }
+  nav { margin-left:auto; display:flex; gap:6px; flex-wrap:wrap; }
+  nav a { color:#fff; text-decoration:none; border:1px solid rgba(255,255,255,.32); border-radius:9px; padding:6px 11px; font-size:13px; font-weight:600; }
+  nav a:hover { background:rgba(255,255,255,.13); }
+  nav a.on { background:var(--gold); border-color:var(--gold); color:#241c05; }
+
+  .body { display:grid; grid-template-columns:minmax(0,1fr) 400px; min-height:0; }
+  #mapwrap { position:relative; min-width:0; }
+  #map { position:absolute; inset:0; background:#b9d0e6; }
+  .leaflet-container { background:#b9d0e6; font:inherit; }
+  .leaflet-popup-content { margin:10px 12px; font-size:12.5px; color:var(--ink); }
+  .leaflet-popup-content b { color:var(--navy); }
+
+  .toolbar { position:absolute; top:12px; left:12px; z-index:600; display:flex; gap:6px; flex-wrap:wrap; max-width:calc(100% - 24px); }
+  .toolbar button { background:#fff; border:1px solid #cfd7e1; border-radius:9px; padding:7px 11px; font-weight:600; font-size:12.5px; color:var(--navy); cursor:pointer; box-shadow:0 4px 14px rgba(20,33,61,.1); }
+  .toolbar button.on { background:var(--navy); border-color:var(--navy); color:#fff; }
+
+  aside { background:#fff; border-left:1px solid var(--line); overflow-y:auto; padding:16px 18px 26px; }
+  aside h2 { margin:0 0 4px; font:700 18px Georgia,serif; color:var(--navy); }
+  aside .sub { margin:0 0 12px; font-size:12.5px; color:var(--muted); }
+  .stats { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:10px 0 14px; }
+  .stats div { background:#f4f7fb; border-radius:9px; padding:8px 10px; }
+  .stats b { display:block; font:700 16px Georgia,serif; color:var(--navy); font-variant-numeric:tabular-nums; }
+  .stats span { display:block; font-size:11.2px; color:var(--muted); line-height:1.3; }
+
+  .legend { margin:6px 0 14px; }
+  .legend .row { display:flex; align-items:center; gap:8px; margin:5px 0; font-size:12.5px; color:var(--ink2); }
+  .sw { width:16px; height:12px; border-radius:3px; flex:0 0 auto; }
+  .dot { width:10px; height:10px; border-radius:50%; flex:0 0 auto; }
+
+  .ctl { margin:12px 0; }
+  .ctl label { display:flex; justify-content:space-between; font-size:12.8px; color:#3b4856; }
+  .ctl output { font-weight:700; color:var(--navy); }
+  .ctl input[type=range] { width:100%; accent-color:var(--amber); }
+
+  details { margin-top:10px; font-size:12.5px; color:var(--ink2); }
+  details summary { cursor:pointer; font-weight:600; color:var(--navy); }
+  details p { margin:8px 0 0; }
+  .note { background:#fff8e6; border:1px solid #f0d9a8; border-radius:10px; padding:10px 12px; color:#6b5220; font-size:12.4px; margin-top:12px; }
+  .attr { font-size:11.5px; color:var(--muted); margin-top:12px; }
+  #eventsList { margin-top:8px; max-height:220px; overflow-y:auto; border:1px solid var(--line); border-radius:10px; }
+  #eventsList div { padding:6px 9px; font-size:12px; border-bottom:1px solid var(--line); display:flex; gap:8px; }
+  #eventsList div:last-child { border-bottom:0; }
+  #eventsList b { color:var(--navy); font-variant-numeric:tabular-nums; min-width:42px; }
+  #eventsList span { color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  @media (max-width: 980px) { .body { grid-template-columns: minmax(0,1fr); } aside { display:none; } }
+</style>
+</head>
+<body>
+<div class="shell">
+  <header>
+    <h1>Earthquake hazard · World</h1>
+    <span class="sub">Ranked from the USGS record on a 2° grid</span>
+    <nav aria-label="Pages">
+      <a href="/globe">World 3D</a>
+      <a href="/world" class="on" aria-current="page">World 2D</a>
+      <a href="/docs">API docs</a>
+    </nav>
+  </header>
+
+  <div class="body">
+    <div id="mapwrap">
+      <div id="map" role="application" aria-label="World hazard map"></div>
+      <div class="toolbar">
+        <button id="btnHazard" class="on">Hazard cells</button>
+        <button id="btnEvents" class="on">Earthquakes</button>
+        <button id="btnCountries" class="on">Countries</button>
+        <button id="btnBasemap">Basemap</button>
+        <button id="btnWhole">Whole world</button>
+      </div>
+    </div>
+
+    <aside>
+      <h2>Global hazard</h2>
+      <p class="sub" id="sourceLine">Loading the catalogue…</p>
+      <div class="stats">
+        <div><b id="stEvents">–</b><span>events in view</span></div>
+        <div><b id="stCells">–</b><span>hazard cells</span></div>
+        <div><b id="stRed">–</b><span>top-third cells</span></div>
+        <div><b id="stStrong">–</b><span>M7+ plotted</span></div>
+      </div>
+
+      <div class="legend">
+        <div class="row"><i class="sw" style="background:var(--red)"></i> Red — top third of the score</div>
+        <div class="row"><i class="sw" style="background:var(--yellow)"></i> Yellow — middle third</div>
+        <div class="row"><i class="sw" style="background:var(--green)"></i> Green — bottom third</div>
+        <div class="row" style="margin-top:9px"><i class="dot" style="background:#e2542c"></i> M7.0+</div>
+        <div class="row"><i class="dot" style="background:#f0a43a"></i> M6.0–6.9</div>
+        <div class="row"><i class="dot" style="background:#f6d28a"></i> M5.0–5.9</div>
+      </div>
+
+      <div class="ctl">
+        <label><span>Minimum magnitude</span><output id="magOut">5.0</output></label>
+        <input id="mag" type="range" min="5" max="8" step="0.1" value="5">
+      </div>
+
+      <div>
+        <strong style="font-size:12.8px;color:var(--navy)">Strongest events</strong>
+        <div id="eventsList"></div>
+      </div>
+
+      <details open>
+        <summary>How the score is computed</summary>
+        <p id="methodFull">—</p>
+        <p class="note" id="disclaimer">—</p>
+      </details>
+
+      <details>
+        <summary>Where the building model fits</summary>
+        <p>The damage model needs building attributes, not coordinates, so it runs the same anywhere.
+          Open the <a href="/globe">world globe</a>, click a point and fill the form. The
+          <b>Example</b> button there scores 30 real held-out survey buildings and checks the
+          predictions against the grades the survey recorded.</p>
+      </details>
+
+      <p class="attr" id="attrLine">—</p>
+    </aside>
+  </div>
+</div>
+
+<script src="/static/vendor/leaflet/leaflet.js"></script>
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const fmt = (n) => (n == null ? '—' : Number(n).toLocaleString('en-US'));
+  const COLORS = { r: '#c53030', y: '#d69e2e', g: '#2f855a' };
+  const MAG_COLOR = (m) => (m >= 7 ? '#e2542c' : m >= 6 ? '#f0a43a' : '#f6d28a');
+
+  const map = L.map('map', { zoomControl: false, attributionControl: true, minZoom: 2, maxZoom: 9, worldCopyJump: true });
+  // frame the populated world rather than every antimeridian copy of it
+  const WHOLE_WORLD = [[-58, -168], [76, 179]];
+  const wholeWorld = (animate) => {
+    map.invalidateSize();                     // the grid has no size until the first layout pass
+    map.fitBounds(WHOLE_WORLD, { animate, padding: [6, 6] });
+  };
+  window.__m = map;   // exposed for the browser checks
+  wholeWorld(false);
+  window.addEventListener('load', () => wholeWorld(false));
+  window.addEventListener('resize', () => map.invalidateSize());
+  L.control.zoom({ position: 'bottomright' }).addTo(map);
+  map.attributionControl.setPrefix(false);
+  map.attributionControl.addAttribution('Earthquakes: USGS catalogue via Live Atlas · Countries: Natural Earth');
+
+  // Three stacking levels: land tint under the cells, the cells, then crisp coastlines on top,
+  // so the hazard band stays readable and the geography is still recognisable.
+  const landLayer = L.layerGroup().addTo(map);
+  const hazardLayer = L.layerGroup().addTo(map);
+  const coastLayer = L.layerGroup().addTo(map);
+  const eventLayer = L.layerGroup().addTo(map);
+  const countryLayer = L.layerGroup();               // the toggle switches all three country levels together
+  countryLayer.addLayer(landLayer);
+  countryLayer.addLayer(coastLayer);
+  let basemap = null;
+  let hazardGeo = null;
+  let allEvents = [];
+  let minMag = 5.0;
+
+  $('btnHazard').addEventListener('click', (e) => {
+    if (map.hasLayer(hazardLayer)) { map.removeLayer(hazardLayer); e.currentTarget.classList.remove('on'); }
+    else { map.addLayer(hazardLayer); e.currentTarget.classList.add('on'); }
+  });
+  $('btnEvents').addEventListener('click', (e) => {
+    if (map.hasLayer(eventLayer)) { map.removeLayer(eventLayer); e.currentTarget.classList.remove('on'); }
+    else { map.addLayer(eventLayer); e.currentTarget.classList.add('on'); }
+  });
+  let countriesOn = true;
+  const showCountries = (on) => {
+    countriesOn = on;
+    for (const layer of [landLayer, coastLayer]) {
+      if (on) map.addLayer(layer); else map.removeLayer(layer);
+    }
+    $('btnCountries').classList.toggle('on', on);
+  };
+  $('btnCountries').addEventListener('click', () => showCountries(!countriesOn));
+  $('btnWhole').addEventListener('click', () => wholeWorld(true));
+  $('btnBasemap').addEventListener('click', (e) => {
+    if (basemap) { map.removeLayer(basemap); basemap = null; e.currentTarget.classList.remove('on'); return; }
+    basemap = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 8, opacity: 0.55, attribution: '© OpenStreetMap contributors',
+    }).addTo(map);
+    basemap.bringToBack();
+    e.currentTarget.classList.add('on');
+  });
+
+  // ---------------------------------------------------------------- countries
+  fetch('/api/world/countries.geojson')
+    .then((r) => r.json())
+    .then((gj) => {
+      const label = (f, layer) => layer.bindTooltip(f.properties.name, { sticky: true });
+      L.geoJSON(gj, {                                   // land tint, under the hazard cells
+        style: { color: 'none', weight: 0, fillColor: '#fbfdff', fillOpacity: 0.95 },
+      }).addTo(landLayer);
+      L.geoJSON(gj, {                                   // coastlines and borders, over the cells
+        interactive: true,
+        style: { color: '#33506f', weight: 0.9, opacity: 0.85, fill: false },
+        onEachFeature: label,
+      }).addTo(coastLayer);
+    })
+    .catch(() => {});
+
+  // ---------------------------------------------------------------- hazard cells
+  // a translucent wash at any zoom: solid blocks of red would hide the land underneath
+  function cellStyleGlobal(f) {
+    const z = map.getZoom();
+    const alpha = z <= 2 ? 0.6 : z === 3 ? 0.5 : z === 4 ? 0.36 : z === 5 ? 0.26 : 0.18;
+    return {
+      color: COLORS[f.properties.cls], weight: z <= 3 ? 0.3 : 0.5,
+      opacity: z <= 3 ? 0.35 : 0.4,
+      fillColor: COLORS[f.properties.cls], fillOpacity: alpha,
+    };
+  }
+
+  fetch('/api/world/hazard')
+    .then((r) => r.json())
+    .then((data) => {
+      const cells = data.cells;
+      const meta = data.meta;
+      $('stCells').textContent = fmt(meta.cells_total ?? cells.length);
+      $('stRed').textContent = fmt(meta.cells ? meta.cells.red : '—');
+      $('methodFull').textContent = meta.method;
+      $('disclaimer').textContent = meta.disclaimer;
+      const counts = { r: 0, y: 0, g: 0 };
+
+      const features = cells.map(([lon, lat, cls, score, n, maxmag]) => {
+        counts[cls] = (counts[cls] || 0) + 1;
+        const step = meta.cell_deg || 2;
+        return {
+          type: 'Feature',
+          properties: { cls, score, events: n, maxmag },
+          geometry: {
+            type: 'Polygon',
+            coordinates: [[[lon, lat], [lon + step, lat], [lon + step, lat + step], [lon, lat + step], [lon, lat]]],
+          },
+        };
+      });
+
+      // a translucent wash at any zoom: solid blocks of red would hide the land underneath
+      hazardGeo = L.geoJSON({ type: 'FeatureCollection', features }, {
+        style: cellStyleGlobal,
+        onEachFeature: (f, layer) => {
+          const p = f.properties;
+          layer.bindPopup(
+            `<b>${p.cls === 'r' ? 'Top third' : p.cls === 'y' ? 'Middle third' : 'Bottom third'}</b><br>` +
+            `Score log₁₀ energy: <b>${p.score}</b><br>` +
+            `Events in this cell: ${p.events}<br>` +
+            `Largest magnitude here: ${p.maxmag || '—'}`,
+          );
+        },
+      }).addTo(hazardLayer);
+
+      $('stCells').textContent = fmt(cells.length);
+      $('stRed').textContent = fmt(counts.r);
+    })
+    .catch(() => {});
+
+  // ---------------------------------------------------------------- events
+  // Dots are sized for the zoom you are at: big enough to read on a regional view,
+  // small enough that 30,000 of them do not swallow the continents on the world view.
+  function dotRadius(zoom, mag) {
+    const base = zoom <= 2 ? 0.9 : zoom === 3 ? 1.3 : zoom === 4 ? 1.9 : zoom === 5 ? 2.8 : 4;
+    return base * (0.75 + 0.25 * (mag - minMag));
+  }
+
+  function paintEvents() {
+    eventLayer.clearLayers();
+    const rows = allEvents.filter((e) => e.mag >= minMag);
+    const zoom = map.getZoom();
+    rows.forEach((e) => {
+      L.circleMarker([e.lat, e.lon], {
+        radius: dotRadius(zoom, e.mag),
+        color: MAG_COLOR(e.mag), weight: 0, opacity: 0.9,
+        fillColor: MAG_COLOR(e.mag), fillOpacity: 0.72,
+      })
+        .bindPopup(
+          `<b>M${e.mag.toFixed(1)}</b> · ${e.time}<br>` +
+          `${e.place || '—'}<br>` +
+          `<span style="color:#6b7785">depth ${e.depth == null ? '—' : e.depth + ' km'} · ` +
+          `${e.lat.toFixed(2)}, ${e.lon.toFixed(2)}</span>`,
+        )
+        .addTo(eventLayer);
+    });
+    $('stEvents').textContent = fmt(rows.length);
+    $('stStrong').textContent = fmt(rows.filter((e) => e.mag >= 7).length);
+
+    const top = [...rows].sort((a, b) => b.mag - a.mag).slice(0, 8);
+    $('eventsList').innerHTML = top.map((e) =>
+      `<div><b>M${e.mag.toFixed(1)}</b><span>${e.time} · ${e.place || e.lat.toFixed(1) + ', ' + e.lon.toFixed(1)}</span></div>`,
+    ).join('') || '<div><span>No events at this threshold.</span></div>';
+  }
+
+  map.on('zoomend', () => {
+    if (allEvents.length) paintEvents();
+    if (hazardGeo) hazardGeo.setStyle((f) => cellStyleGlobal(f));
+  });
+
+  fetch('/api/world/events?min_mag=5&limit=30000')
+    .then((r) => r.json())
+    .then((d) => {
+      allEvents = d.events;
+      $('sourceLine').textContent = `${d.source} · ${fmt(d.count)} events · ${d.coverage} coverage`;
+      $('attrLine').textContent =
+        `${d.source}${d.licence ? ' (' + d.licence + ')' : ''}. Countries: Natural Earth 1:110m (public domain). ` +
+        `Grid: ${d.count ? '2' : '2'}° hazard cells, terciles of smoothed energy. ${d.note || ''}`;
+      paintEvents();
+    })
+    .catch(() => { $('sourceLine').textContent = 'Catalogue unavailable.'; });
+
+  $('mag').addEventListener('input', (e) => {
+    minMag = Number(e.target.value);
+    $('magOut').textContent = minMag.toFixed(1);
+    paintEvents();
+  });
+
+  map.on('click', (e) => {
+    const { lat, lng } = e.latlng;
+    L.popup()
+      .setLatLng(e.latlng)
+      .setContent(
+        `<b>${lat.toFixed(3)}°, ${lng.toFixed(3)}°</b><br>` +
+        `<a href="/globe">Open the globe here</a> to predict a damage grade for this point.`,
+      )
+      .openOn(map);
+  });
+})();
+</script>
+</body>
+</html>

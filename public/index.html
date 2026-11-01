@@ -36,8 +36,8 @@
     #info h1 { margin: 0; font: 700 19px Georgia, "Times New Roman", serif; color: var(--navy); }
     #info .sub { margin: 4px 0 0; font-size: 13px; color: var(--ink2); }
     /* page switcher */
-    .pagenav { display: flex; gap: 6px; margin: 10px 0 0; }
-    .pagenav a { flex: 1; text-align: center; text-decoration: none; font-size: 12.5px; font-weight: 600; color: var(--navy); border: 1px solid #d3dbe5; border-radius: 8px; padding: 6px 8px; background: #fff; transition: background .2s, border-color .2s, color .2s; }
+    .pagenav { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 10px 0 0; }
+    .pagenav a { text-align: center; text-decoration: none; font-size: 12.5px; font-weight: 600; color: var(--navy); border: 1px solid #d3dbe5; border-radius: 8px; padding: 6px 8px; background: #fff; transition: background .2s, border-color .2s, color .2s; }
     .pagenav a:hover { border-color: var(--navy); background: #f4f7fb; }
     .pagenav a.on { background: var(--navy); border-color: var(--navy); color: #fff; }
 
@@ -172,9 +172,11 @@
     <section id="info" class="card" aria-label="About this map">
       <h1>Assam in 3D</h1>
       <nav class="pagenav" aria-label="Pages">
-        <a href="/" class="on" aria-current="page">3D map</a>
-        <a href="/2d">2D hazard</a>
-        <a href="/docs">API docs</a>
+        <a href="/" class="on" aria-current="page">Assam 3D</a>
+        <a href="/2d">Assam 2D</a>
+        <a href="/globe">World 3D</a>
+        <a href="/world">World 2D</a>
+        <a href="/docs">Docs</a>
       </nav>
       <p class="sub">Real building footprints from Overture Maps, drawn at their recorded or estimated height. Click any building to see its predicted damage grade and class probabilities.</p>
       <div class="stats">
