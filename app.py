@@ -7,13 +7,13 @@ Run from the project folder:
     uvicorn app:app --host 0.0.0.0 --port 8000
 
 Pages
-  GET  /globe            the whole world in 3D: countries, catalogue, hazard grid
-  GET  /world            the whole world in 2D (Leaflet)
+  GET  /                 3D building map of Assam (Overture footprints)
+  GET  /place/{id}       other earthquake places in 3D (kutch, koyna)
+  GET  /2d               world risk map
+  GET  /2d/assam         Assam hazard detail + Gorkha damage table
   GET  /docs             API documentation
-  GET  /, /2d, /3d, /lab  redirect to the world pages
-
-The Assam-only pages (/ and /2d) are retired. Their files, hazard grid and
-endpoints are still on disk and still served, but nothing links to them.
+  GET  /3d, /lab         redirect to /
+  GET  /globe            redirect to /, /world redirects to /2d
 
 API
   GET  /api/health       status
@@ -28,7 +28,9 @@ API
   GET  /api/hazard       hazard method, thresholds and cell counts
   GET  /api/events       M5+ earthquake events (GeoJSON)
   GET  /api/damage-zones Gorkha 2015 damage zones by anonymised area
-  GET  /api/world/status       what the world pages have loaded
+  GET  /api/places             the 3D places and their counts
+  GET  /api/places/{id}        hazard grid + epicentres for one place
+  GET  /api/world/status       what the world risk map has loaded
   GET  /api/world/countries    Natural Earth 1:110m countries as lon/lat rings
   GET  /api/world/cities       GeoNames cities, population >= 100,000
   GET  /api/world/events       global M5+ / M6+ catalogue (live USGS, bundled fallback)
@@ -52,7 +54,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = HERE
 sys.path.insert(0, ROOT)
 import model as dm  # noqa: E402  (provides DamageModel used by the saved bundle)
-import world as wd  # noqa: E402  (world-scale data for the /globe and /world pages)
+import places as pl  # noqa: E402  (the 3D places view and its hazard grids)
+import world as wd  # noqa: E402  (world-scale data for the /2d risk map)
 
 MODEL_PATH = os.path.join(ROOT, "models", "damage_model.joblib")
 DATA = os.path.join(ROOT, "data")
@@ -164,23 +167,37 @@ GRADE_HELP = {
 # ---------------------------------------------------------------- pages
 @app.get("/")
 def index():
-    # the site is the world map now; the Assam-only pages are retired
-    return RedirectResponse("/globe", status_code=302)
+    # Assam, with every building footprint, is the 3D page again
+    return FileResponse(os.path.join(PUBLIC, "index.html"))
+
+
+@app.get("/place/{pid}")
+def place_page(pid: str):
+    if pid not in pl.PLACES:
+        raise HTTPException(status_code=404, detail=f"unknown place {pid!r}")
+    return FileResponse(os.path.join(PUBLIC, "place.html"))
 
 
 @app.get("/2d")
 def hazard_2d():
-    return RedirectResponse("/world", status_code=302)
+    # the risk map is the whole world
+    return FileResponse(os.path.join(PUBLIC, "world.html"))
+
+
+@app.get("/2d/assam")
+def hazard_2d_assam():
+    return FileResponse(os.path.join(PUBLIC, "2d.html"))
 
 
 @app.get("/globe")
 def globe():
-    return FileResponse(os.path.join(PUBLIC, "globe.html"))
+    # the globe is retired; the 3D page is the places view
+    return RedirectResponse("/", status_code=302)
 
 
 @app.get("/world")
 def world_2d():
-    return FileResponse(os.path.join(PUBLIC, "world.html"))
+    return RedirectResponse("/2d", status_code=301)
 
 
 @app.get("/docs")
@@ -190,12 +207,26 @@ def docs():
 
 @app.get("/3d")
 def assam_3d_redirect():
-    return RedirectResponse("/globe", status_code=301)
+    return RedirectResponse("/", status_code=301)
 
 
 @app.get("/lab")
 def lab_redirect():
-    return RedirectResponse("/globe", status_code=301)
+    return RedirectResponse("/", status_code=301)
+
+
+# ---------------------------------------------------------------- places API
+@app.get("/api/places")
+def api_places():
+    return pl.list_places()
+
+
+@app.get("/api/places/{pid}")
+def api_place(pid: str):
+    try:
+        return pl.place(pid)
+    except KeyError:
+        raise HTTPException(status_code=404, detail=f"unknown place {pid!r}")
 
 
 # ---------------------------------------------------------------- model API
@@ -432,19 +463,19 @@ DOCS_HTML = """<!doctype html>
 </head>
 <body>
 <header><div class="wrap">
-  <div><h1>API documentation</h1><p>Worldwide earthquake hazard and building damage · FastAPI</p></div>
-  <nav><a href="/globe">World 3D</a><a href="/world">World 2D</a></nav>
+  <div><h1>API documentation</h1><p>Earthquake places in 3D and the world risk map · FastAPI</p></div>
+  <nav><a href="/">3D places</a><a href="/2d">World risk map</a></nav>
 </div></header>
 <main class="wrap">
-  <p>Every endpoint returns JSON except the three pages. The machine-readable schema is at
+  <p>Every endpoint returns JSON except the pages below. The machine-readable schema is at
   <a href="/openapi.json"><code>/openapi.json</code></a>; this page is the human-readable reference.</p>
 
   <h2>Pages</h2>
-  <div class="ep"><span class="verb get">GET</span><code class="path">/</code><p>Redirects to <code>/globe</code>.</p></div>
-  <div class="ep"><span class="verb get">GET</span><code class="path">/2d</code><p>Redirects to <code>/world</code>.</p></div>
-  <div class="ep"><span class="verb get">GET</span><code class="path">/globe</code><p>The whole world in 3D: 177 country outlines on a sphere, 30,648 catalogued earthquakes, 6,000 hazard cells, and a damage-grade prediction for any point you click.</p></div>
-  <div class="ep"><span class="verb get">GET</span><code class="path">/world</code><p>The same data as a 2D world map: hazard cells, M5+ events with a magnitude slider, country outlines, and the strongest events in the catalogue.</p></div>
-  <div class="ep"><span class="verb get">GET</span><code class="path">/docs</code><p>This page.</p></div>
+  <div class="ep"><span class="verb get">GET</span><code class="path">/</code><p><b>Assam in 3D.</b> 13,302,299 Overture building footprints streamed as 0.1° tiles; click a building for a damage grade; the Example panel scores 30 real held-out survey records.</p></div>
+  <div class="ep"><span class="verb get">GET</span><code class="path">/place/{id}</code><p><b>Other earthquake places in 3D</b> — <code>kutch</code> (Bhuj, 2001) and <code>koyna</code> (1967). These states have no packaged building footprints, so the page draws the hazard grid and the epicentres from the USGS catalogue and runs the damage model on a building profile you describe.</p></div>
+  <div class="ep"><span class="verb get">GET</span><code class="path">/2d</code><p><b>World risk map.</b> 2° hazard cells, the global M5+ catalogue with a magnitude slider, country outlines and the strongest events.</p></div>
+  <div class="ep"><span class="verb get">GET</span><code class="path">/2d/assam</code><p><b>Assam hazard detail.</b> The regional 0.25° grid, M5+ events and the 2015 Gorkha damage table for 31 anonymised areas.</p></div>
+  <div class="ep"><span class="verb get">GET</span><code class="path">/docs</code><p>This page. <code>/globe</code> redirects to <code>/</code> and <code>/world</code> to <code>/2d</code>.</p></div>
 
   <h2>Model</h2>
   <div class="ep"><span class="verb get">GET</span><code class="path">/api/health</code><p>Status: <code>ok</code>, <code>model_loaded</code>, <code>hazard_ready</code>.</p></div>
@@ -483,6 +514,16 @@ DOCS_HTML = """<!doctype html>
   <div class="ep"><span class="verb get">GET</span><code class="path">/api/damage-zones</code><p>Gorkha 2015 damage by anonymised area: zone, buildings surveyed, grade-3 share, accuracy, risk score.</p></div>
 
   <h2>World</h2>
+  <h2>Places</h2>
+  <div class="ep"><span class="verb get">GET</span><code class="path">/api/places</code><p>The places in the 3D view, with what each one has: <code>assam</code> (13.3 million building footprints) and the two catalogue-only places, <code>kutch</code> and <code>koyna</code>.</p></div>
+  <div class="ep"><span class="verb get">GET</span><code class="path">/api/places/{id}</code><p>One place: its box, the hazard grid computed inside that box, and its epicentres. Assam has no computed grid here (it keeps its own 0.25° regional grid on <code>/2d/assam</code>).</p>
+    <pre>{"id":"kutch","name":"Kutch, Gujarat","bbox":[68.4,22.0,72.2,24.9],
+ "meta":{"events":150,"events_m5":16,"cells_total":320,"largest":{"mag":7.7,"time":"2001-01-26"}},
+ "cells":[[70.2,23.35,"r",10.17,12,7.7]],
+ "events":[{"lon":70.232,"lat":23.419,"mag":7.7,"time":"2001-01-26","place":"17 km NW of Bhachau, India"}]}</pre>
+  </div>
+
+  <h2>World</h2>
   <div class="ep"><span class="verb get">GET</span><code class="path">/api/world/status</code><p>What the world pages have loaded: countries, cities, catalogue coverage (global or bundled), hazard cells and the detail build.</p></div>
   <div class="ep"><span class="verb get">GET</span><code class="path">/api/world/countries</code><p>177 Natural Earth 1:110m countries as lon/lat rings (10,583 points, 176 KB), plus licence and source.</p></div>
   <div class="ep"><span class="verb get">GET</span><code class="path">/api/world/countries.geojson</code><p>The same countries as a GeoJSON FeatureCollection of MultiPolygons, for Leaflet.</p></div>
@@ -505,7 +546,7 @@ DOCS_HTML = """<!doctype html>
   <h2>Static files</h2>
   <table>
     <tr><th>Path</th><th>Contents</th></tr>
-    <tr><td><code>/static/world/globe.js</code></td><td>The 3D globe: country texture, event sprites, hazard wash, click-to-predict</td></tr>
+    <tr><td><code>/static/places/place.js</code></td><td>The 3D places view: hazard columns, epicentres, damage-model form</td></tr>
     <tr><td><code>/static/world/countries.json</code></td><td>177 countries as lon/lat rings (Natural Earth 1:110m)</td></tr>
     <tr><td><code>/static/world/cities.json</code></td><td>4,442 cities, population 100,000+ (GeoNames)</td></tr>
     <tr><td><code>data/quakes/world_catalogue.json</code></td><td>30,648 events, compact integer encoding, CC BY 4.0</td></tr>

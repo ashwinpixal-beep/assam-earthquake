@@ -1,17 +1,16 @@
-# Worldwide earthquake hazard and building damage
+# Earthquake places in 3D and the world risk map
 
-A single web app with two map pages, both covering the whole world:
+A single web app with a 3D page for individual places and a 2D map of the whole world:
 
 | Page | What it does |
 |---|---|
-| `/globe` (also `/`) | **The whole world in 3D.** 177 countries, the 30,648-event global catalogue, and 6,000 hazard cells painted onto one sphere. Click anywhere on the globe for a damage-grade prediction for the building profile you describe. The **Example** button scores 30 real held-out survey records and checks the predictions against the recorded grades. |
-| `/world` (also `/2d`) | **The whole world in 2D.** The same catalogue and hazard grid on a Leaflet map, with country outlines, a magnitude filter, layer toggles and a basemap toggle. |
+| `/` | **Assam in 3D.** 13,302,299 Overture building footprints streamed as 0.1° binary tiles. Click a building for a damage grade. The **Example** button scores 30 real held-out survey records and checks the predictions against the grades the survey recorded. |
+| `/place/kutch` `/place/koyna` | **Other earthquake places, same 3D page.** Gujarat (Bhuj, 2001, M7.7) and Maharashtra (Koyna, 1967). No building footprints are packaged for those states, so the page draws the hazard grid computed inside the state's box plus every epicentre from the USGS catalogue, and still runs the damage model on a building profile you describe. |
+| `/2d` | **World risk map.** 2° hazard cells, the 30,648-event global catalogue with a magnitude filter, country outlines, layer toggles and a basemap. |
+| `/2d/assam` | **Assam hazard detail.** The regional 0.25° grid, M5+ events and the 2015 Gorkha damage table for 31 anonymised areas. |
 | `/docs` | **API documentation.** Every endpoint, with an example request and response. |
 
-The Assam-only pages (`/` 3D building map of 13.3 million footprints, `/2d` regional
-hazard map) are retired: those routes now redirect to `/globe` and `/world`. Their
-tiles, hazard grid, damage table and endpoints are still on disk and still served,
-so nothing that used them breaks — but no page links to them any more.
+`/globe` redirects to `/`, `/world` to `/2d`.
 
 The damage model predicts the 2015 Gorkha earthquake damage grade of a building
 (1 = low, 2 = medium, 3 = near-complete destruction) from the DrivenData
@@ -105,23 +104,26 @@ cached and marked `X-Cache: hit`.
 ```
 app.py                     FastAPI app: pages, static files, API
 world.py                   world layer: countries, cities, global catalogue, 2° hazard grid
+places.py                  the 3D places: Assam, Kutch, Koyna and their per-place hazard grids
 model.py                   DamageModel class used by the saved bundle
 start.py                   one-click launcher
 models/damage_model.joblib  trained ensemble (LightGBM + XGBoost), about 25 MB
 data/                      areas, districts, examples, metrics, options, results
 data/quakes/               USGS M4+ catalogue, 2000–2026 (3.3 MB) + global M5/M6 catalogue (1.1 MB)
-public/index.html          retired Assam 3D page (not linked)
-public/2d.html             retired Assam 2D page (not linked)
-public/globe.html          3D world page      (/globe)
-public/world.html          2D world page      (/world)
-public/static/world/       globe.js, examples.js, countries.json, cities.json
+public/index.html          Assam 3D page     (/)
+public/2d.html             Assam hazard detail (/2d/assam)
+public/place.html          other places in 3D (/place/{id})
+public/world.html          world risk map     (/2d)
+public/static/places/      place.js: hazard columns, epicentres, damage form
+public/static/assam3d/     viewer.js + examples.js (the Example panel runs without WebGL)
+public/static/world/       countries.json, cities.json
 public/static/assam3d/     viewer.js, boundary, three.js, tiles (837 × .bin)
 public/static/hazard/      hazard grid, M5+ events, meta, damage zones
 public/static/shared/      shared.js
 public/static/vendor/      Leaflet 1.9.4
 scripts/                   rebuild hazard data, damage zones, examples
 research/                  training experiments (reference only)
-tests/                     browser checks (Playwright, 20 checks)
+tests/                     browser checks (Playwright, 21 checks)
 archive/                   earlier project page and lab (not served)
 ```
 
@@ -150,14 +152,23 @@ python -m playwright install chromium
 pytest tests/test_app.py -v
 ```
 
-20 checks: both world pages, the redirects that retired the Assam pages, the
-globe's data and canvas, click-to-predict, the Example panel (30 rows, 3×3
-confusion matrix), the world map's layers and magnitude filter, the docs page,
-and the API (`health`, `predict`, `422` validation, `examples`, world status /
-events / hazard / countries, sideways scroll). Checks that need a GPU skip
-themselves when the browser has no WebGL. See `tests/README.md`.
+21 checks: the Assam page and its building total, the places nav and API, a place
+page rendering with its grid and epicentres, the Example panel (30 rows, 3×3
+confusion matrix), the world risk map's layers and magnitude filter, the docs
+page, the redirects, and the API (`health`, `predict`, `422` validation,
+`examples`, `places`, world status / events / hazard / countries, sideways
+scroll). Checks that need a GPU skip themselves when the browser has no WebGL.
+See `tests/README.md`.
 
 ## Method notes
+
+**Places layer.** Kutch and Koyna use the bundled USGS India catalogue
+(`data/quakes/india_quakes_m4_2000_2026.csv`, M4.0+ 2000-01-01 to 2026-10-26,
+18,501 rows). For each place the grid is recomputed inside the state's box —
+0.15° cells for Kutch, 0.10° for Koyna — with Gutenberg–Richter energy, Gaussian
+smoothing at 2σ, the strongest 260–320 cells kept and split into terciles.
+Kutch: 150 events, 16 of them M5+, largest M7.7 on 2001-01-26 near Bhachau.
+Koyna: 27 events, 3 of them M5+, largest M5.2 in the 2000–2026 window.
 
 **World layer.** The global catalogue is the USGS record as packaged in
 `liveatlasearth/earthquake-catalogs` (CC BY 4.0): M5.0+ worldwide 2016–2025 plus

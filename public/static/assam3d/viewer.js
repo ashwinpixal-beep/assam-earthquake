@@ -37,7 +37,11 @@ try {
   if (card) {
     card.innerHTML = '<div class="ltitle">3D needs WebGL</div>'
       + '<div class="lsub">This browser or GPU has WebGL disabled, so the building map cannot be drawn. '
-      + 'Try the <a href="/2d" style="color:#f6d28a">2D hazard map</a>, which needs no GPU.</div>';
+      + 'The counts, the Example panel and the links still work; for the map itself try the '
+      + '<a href="/place/kutch" style="color:#f6d28a">Kutch</a> or '
+      + '<a href="/2d" style="color:#f6d28a">world risk map</a> pages.</div>';
+    const box = document.getElementById('loader');
+    if (box) box.classList.add('nowebgl');
   }
   window.__noGL = true;
   $('status').textContent = 'WebGL unavailable — the 2D pages still work.';
@@ -562,89 +566,18 @@ function updateLabel() {
 
 $('bclose').addEventListener('click', closePanel);
 
-// ---------------------------------------------------------------- example: model vs real records
-const ex = { seed: 0, busy: false };
-const GRADE_TEXT = { 1: 'Low', 2: 'Medium', 3: 'Near-complete' };
-const fmtPct = (v, d = 1) => (v == null ? '–' : (v * 100).toFixed(d) + '%');
-const esc = (v) => String(v).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const gradeChip = (g) => `<span class="grade" style="background:${GRADES[g].hex}">${g}</span>`;
-
-function openExamples() {
-  clearSelection();
-  $('bpanel').hidden = true;
-  $('epanel').hidden = false;
-  syncOpen();
-  setActiveCity(null);
-  // the examples are survey records, so the camera goes to the city view rather than a building
-  const x = project(91.7362, 26.1445)[0], z = project(91.7362, 26.1445)[1];
-  flyTo(new THREE.Vector3(x, 0, z), new THREE.Vector3(x + 2500, 4500, z + 4000), 1500);
-  runExamples(ex.seed === 0);
-}
-
-function closeExamples() {
-  $('epanel').hidden = true;
-  syncOpen();
-}
-
-async function runExamples(fresh) {
-  if (fresh || ex.seed === 0) ex.seed = 1 + Math.floor(Math.random() * 999999);
-  if (ex.busy) return;
-  ex.busy = true;
-  const n = Number($('e-n').value);
-  $('e-status').textContent = `Running the model on ${n} real records…`;
-  try {
-    const r = await fetch(`/api/examples?n=${n}&seed=${ex.seed}`);
-    if (!r.ok) throw new Error(`server returned ${r.status}`);
-    renderExamples(await r.json());
-  } catch (e) {
-    $('e-status').textContent = `Could not run the examples: ${e.message}`;
-  } finally {
-    ex.busy = false;
-  }
-}
-
-function renderExamples(d) {
-  $('e-acc').textContent = fmtPct(d.accuracy);
-  $('e-full').textContent = fmtPct(d.test_accuracy, 2);
-  $('e-maj').textContent = fmtPct(d.majority_accuracy);
-  $('e-status').textContent = `Sample ${d.correct} of ${d.n} correct. The model is ${d.correct === d.n ? 'right on every record here' : `off on ${d.n - d.correct} here`}. Small samples vary a lot; the full held-out figure is the reliable one.`;
-
-  // confusion matrix: rows are the real grade, columns the predicted grade
-  const head = `<tr><th>Real ↓ · Predicted →</th>${[1, 2, 3].map((g) => `<th>${gradeChip(g)} ${GRADE_TEXT[g]}</th>`).join('')}<th>Recall</th></tr>`;
-  const body = d.confusion.map((row, i) => {
-    const total = row.reduce((a, b) => a + b, 0);
-    const cells = row.map((c, j) => `<td class="${i === j ? 'diag' : ''}">${c}</td>`).join('');
-    return `<tr><th>${gradeChip(i + 1)} ${GRADE_TEXT[i + 1]}</th>${cells}<td>${total ? fmtPct(row[i] / total, 0) : '–'}</td></tr>`;
-  }).join('');
-  $('e-cm').innerHTML = `<thead>${head}</thead><tbody>${body}</tbody>`;
-
-  // per-record table
-  const rows = d.rows.map((r) => {
-    const inp = r.inputs;
-    const walls = inp.walls.length ? inp.walls.map(esc).join(', ') : 'none listed';
-    return `<tr>
-      <td>${esc(inp.floors)} fl · ${esc(inp.age)} yr · ${esc(walls)}</td>
-      <td>${gradeChip(r.actual)}</td>
-      <td>${gradeChip(r.predicted)}</td>
-      <td>${fmtPct(r.confidence, 0)}</td>
-      <td class="${r.correct ? 'ok' : 'miss'}">${r.correct ? '✓ match' : '✗ miss'}</td>
-    </tr>`;
-  }).join('');
-  $('e-rows').innerHTML = `<thead><tr><th>Survey inputs</th><th>Real</th><th>Predicted</th><th>Confidence</th><th>Result</th></tr></thead><tbody>${rows}</tbody>`;
-  $('e-note').textContent = d.note;
-}
-
-$('example-btn').addEventListener('click', () => {
-  if ($('epanel').hidden) openExamples(); else closeExamples();
-});
-$('eclose').addEventListener('click', closeExamples);
-$('e-new').addEventListener('click', () => runExamples(true));
-$('e-n').addEventListener('change', () => runExamples(false));
-window.addEventListener('keydown', (e) => {
-  if (e.key !== 'Escape') return;
-  if (!$('bpanel').hidden) closePanel();
-  else if (!$('epanel').hidden) closeExamples();
-});
+// ---------------------------------------------------------------- example panel hook
+// The panel itself lives in examples.js and runs without WebGL; when the renderer is up,
+// opening it also steps back to the city view.
+window.__assam3d = {
+  focusExamples() {
+    if (window.__noGL) return;
+    clearSelection();
+    setActiveCity(null);
+    const [x, z] = project(91.7362, 26.1445);
+    flyTo(new THREE.Vector3(x, 0, z), new THREE.Vector3(x + 2500, 4500, z + 4000), 1500);
+  },
+};
 
 loadOptions().then((options) => {
   formControls = buildControls($('bform'), options, (payload) => {
