@@ -1,16 +1,16 @@
-# Earthquake places in 3D and the world risk map
+# India in 3D and the world risk map
 
-A single web app with a 3D page for individual places and a 2D map of the whole world:
+One 3D page for the whole of India, and one 2D map of the whole world:
 
 | Page | What it does |
 |---|---|
-| `/` | **Assam in 3D.** 13,302,299 Overture building footprints streamed as 0.1° binary tiles. Click a building for a damage grade. The **Example** button scores 30 real held-out survey records and checks the predictions against the grades the survey recorded. |
-| `/place/kutch` `/place/koyna` | **Other earthquake places, same 3D page.** Gujarat (Bhuj, 2001, M7.7) and Maharashtra (Koyna, 1967). No building footprints are packaged for those states, so the page draws the hazard grid computed inside the state's box plus every epicentre from the USGS catalogue, and still runs the damage model on a building profile you describe. |
+| `/` | **India in 3D.** All 36 states and union territories on one map: real state outlines, the national 0.25° hazard grid (2,651 cells), 1,463 catalogued M4+ epicentres, and Assam's 13,302,299 Overture building footprints streamed as 0.1° binary tiles. Click a state for its earthquake record and to score a building profile; zoom into Assam and click a building for its damage grade. The **Example** button scores 30 real held-out survey records against the grades the survey recorded. |
 | `/2d` | **World risk map.** 2° hazard cells, the 30,648-event global catalogue with a magnitude filter, country outlines, layer toggles and a basemap. |
 | `/2d/assam` | **Assam hazard detail.** The regional 0.25° grid, M5+ events and the 2015 Gorkha damage table for 31 anonymised areas. |
 | `/docs` | **API documentation.** Every endpoint, with an example request and response. |
 
-`/globe` redirects to `/`, `/world` to `/2d`.
+`/globe`, `/3d` and `/lab` redirect to `/`; `/world` to `/2d`; the old per-state pages
+(`/place/kutch`, `/place/koyna`) redirect to `/`, which now contains every state.
 
 The damage model predicts the 2015 Gorkha earthquake damage grade of a building
 (1 = low, 2 = medium, 3 = near-complete destruction) from the DrivenData
@@ -80,6 +80,10 @@ similar). `libgomp1` is installed in the image because LightGBM needs it.
 | GET | `/api/hazard` | Hazard method, thresholds, cell counts |
 | GET | `/api/events` | M5+ events (GeoJSON) |
 | GET | `/api/damage-zones` | Gorkha 2015 damage by anonymised area |
+| GET | `/api/india/status` | 36 states, in-India epicentre counts, hazard cells, footprint note, per-state rows |
+| GET | `/api/india/hazard` | National 0.25° hazard grid (2,651 cells) + method and thresholds |
+| GET | `/api/india/events?min_mag=` | Catalogued events that fall inside an Indian outline (1,463 at M4+) |
+| GET | `/api/india/state/{id}` | One state: outline rings, its events, its largest event |
 
 ```bash
 curl -s localhost:8000/api/health
@@ -104,20 +108,20 @@ cached and marked `X-Cache: hit`.
 ```
 app.py                     FastAPI app: pages, static files, API
 world.py                   world layer: countries, cities, global catalogue, 2° hazard grid
-places.py                  the 3D places: Assam, Kutch, Koyna and their per-place hazard grids
+india.py                   the whole-country layer: states, national hazard grid, per-state events
+places.py                  the catalogue loader and the retired per-place hazard grids
 model.py                   DamageModel class used by the saved bundle
 start.py                   one-click launcher
 models/damage_model.joblib  trained ensemble (LightGBM + XGBoost), about 25 MB
 data/                      areas, districts, examples, metrics, options, results
 data/quakes/               USGS M4+ catalogue, 2000–2026 (3.3 MB) + global M5/M6 catalogue (1.1 MB)
-public/index.html          Assam 3D page     (/)
+public/index.html          India 3D page      (/)
 public/2d.html             Assam hazard detail (/2d/assam)
-public/place.html          other places in 3D (/place/{id})
 public/world.html          world risk map     (/2d)
-public/static/places/      place.js: hazard columns, epicentres, damage form
-public/static/assam3d/     viewer.js + examples.js (the Example panel runs without WebGL)
+public/place.html          retired per-state page (not served; /place/{id} redirects to /)
+public/static/india/       india.js (the country view) + states.json (36 outlines, 29,503 points)
+public/static/assam3d/     tiles (837 × .bin), examples.js, viewer.js, three.js
 public/static/world/       countries.json, cities.json
-public/static/assam3d/     viewer.js, boundary, three.js, tiles (837 × .bin)
 public/static/hazard/      hazard grid, M5+ events, meta, damage zones
 public/static/shared/      shared.js
 public/static/vendor/      Leaflet 1.9.4
@@ -130,6 +134,7 @@ archive/                   earlier project page and lab (not served)
 ## Rebuild the derived data
 
 ```bash
+python scripts/build_india_states.py path/to/states_india.geojson   # public/static/india/states.json
 python scripts/build_hazard.py         # hazard grid + M5+ events + meta (needs shapely)
 python scripts/build_damage_zones.py   # damage zones from data/areas.json
 python scripts/build_world_data.py     # world catalogue from the USGS CSVs in data/quakes/
@@ -152,23 +157,40 @@ python -m playwright install chromium
 pytest tests/test_app.py -v
 ```
 
-21 checks: the Assam page and its building total, the places nav and API, a place
-page rendering with its grid and epicentres, the Example panel (30 rows, 3×3
-confusion matrix), the world risk map's layers and magnitude filter, the docs
-page, the redirects, and the API (`health`, `predict`, `422` validation,
-`examples`, `places`, world status / events / hazard / countries, sideways
+24 checks: the India page and its national counts (36 states, 1,463 epicentres,
+2,651 hazard cells, 13,302,299 buildings), a state sheet opened from the dock,
+the layer toggles, the Example panel (30 rows, 3×3 confusion matrix), the world
+risk map's layers and magnitude filter, the docs page, the redirects, and the API
+(`health`, `predict`, `422` validation, `examples`, `places`, India status /
+hazard / events / state, world status / events / hazard / countries, sideways
 scroll). Checks that need a GPU skip themselves when the browser has no WebGL.
 See `tests/README.md`.
 
 ## Method notes
 
-**Places layer.** Kutch and Koyna use the bundled USGS India catalogue
-(`data/quakes/india_quakes_m4_2000_2026.csv`, M4.0+ 2000-01-01 to 2026-10-26,
-18,501 rows). For each place the grid is recomputed inside the state's box —
-0.15° cells for Kutch, 0.10° for Koyna — with Gutenberg–Richter energy, Gaussian
-smoothing at 2σ, the strongest 260–320 cells kept and split into terciles.
-Kutch: 150 events, 16 of them M5+, largest M7.7 on 2001-01-26 near Bhachau.
-Koyna: 27 events, 3 of them M5+, largest M5.2 in the 2000–2026 window.
+**India layer.** State outlines come from the public Survey of India boundary set
+(`mraxays/india-states.geojson`, MIT): 36 states and union territories, snapped to
+a 0.02° grid with collinear points removed — 29,503 points, 395 KB
+(`scripts/build_india_states.py`). Events come from the bundled USGS India
+catalogue (`data/quakes/india_quakes_m4_2000_2026.csv`, M4.0+ 2000-01-01 to
+2026-10-26, 18,501 rows); each event is assigned to the state whose outline
+contains it by vectorised point-in-polygon against a 0.05° membership raster
+(state bbox prefilter, then even-odd ray casting), leaving **1,463 events inside
+India** and the rest in Afghanistan, China, Nepal, Myanmar and the surrounding
+seas.
+
+**National hazard grid.** The same Gutenberg–Richter energy `10^(1.5M)` per 0.25°
+cell with Gaussian smoothing (σ = 0.35°), but computed for the whole catalogue and
+then clipped to Indian land: 2,651 cells, split into terciles at 6.48 and 5.22 on
+the log₁₀ energy scale (883 red / 884 yellow / 884 green). The energy field keeps
+the neighbouring-country events on purpose, so the Himalaya, Nepal and Indo-Burma
+belts are not cut off at the border. Per-state counts use in-India events only.
+
+**Buildings.** Assam is the only state with packaged footprints (837 tiles,
+13,302,299 buildings, Overture, ODbL). The country page streams them exactly as the
+old Assam page did — the tiles only load when the camera is inside Assam and below
+320 km, and clicking a building still returns its damage grade. No other state is
+given invented buildings.
 
 **World layer.** The global catalogue is the USGS record as packaged in
 `liveatlasearth/earthquake-catalogs` (CC BY 4.0): M5.0+ worldwide 2016–2025 plus
@@ -185,9 +207,9 @@ world pages say so in the UI.
 
 **Hazard layer.** Gutenberg–Richter energy `10^(1.5M)` per cell, Gaussian
 smoothed, then split into terciles of the score: red = top third, yellow =
-middle, green = bottom. The world grid uses 2° cells (σ = 2°); the retired Assam
-page used 0.25° cells (σ = 0.35°). Both rank where past M4+/M5+ events
-clustered. Neither is a forecast or a seismic design map.
+middle, green = bottom. The world grid uses 2° cells (σ = 2°); the India grid uses 0.25°
+cells (σ = 0.35°). Both rank where past M4+/M5+ events clustered. Neither is a
+forecast or a seismic design map.
 
 **Damage model.** Statistical estimate from 2015 survey records. It is **not** a
 structural assessment or a safety certificate. The survey data has no
@@ -198,8 +220,10 @@ held-out records and compares them with the recorded grade.
 
 ## Data and sources
 
-- Building footprints (retired Assam page, still served): Overture Maps
-  Foundation, release 2026-10-21.0 (ODbL), region IN-AS.
+- Building footprints (Assam, inside the India page): Overture Maps Foundation,
+  release 2026-10-21.0 (ODbL), region IN-AS.
+- State boundaries: Survey of India state outlines, MIT-licensed set
+  (`mraxays/india-states.geojson`, © 2024 Mr Akshay Shinde).
 - Country outlines: Natural Earth 1:110m (public domain), via `world-atlas`.
 - World catalogue: USGS, packaged by Live Atlas, CC BY 4.0.
 - Cities: GeoNames, population 100,000+.
