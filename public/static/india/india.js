@@ -32,7 +32,7 @@ const unproject = (x, z) => [REF_LON + x / KX, REF_LAT - z / KY];
 
 const TILES = '/static/assam3d/tiles/';
 const ASSAM_BBOX = [89.7, 24.14, 96.02, 27.98];
-const DETAIL_MAX_DIST = 320000;        // metres: above this, no building tiles
+const DETAIL_MAX_DIST = 420000;        // metres: above this, no building tiles
 const OVERVIEW_VISIBLE = 620000;       // metres: above this, only the national layers
 const DETAIL_MAX = 160000;             // most building outlines in memory at once
 const DETAIL_MIN = 40000;
@@ -137,7 +137,10 @@ function stateView(s) {
   const [x, z] = project((w + e) / 2, (so + n) / 2);
   const spanX = Math.abs(e - w) * KX, spanZ = Math.abs(n - so) * KY;
   const tan = Math.tan((camera.fov * Math.PI) / 360);
-  const d = Math.max(spanZ / (2 * tan), spanX / (2 * tan) / Math.max(0.6, camera.aspect), 24000) * 1.2;
+  let d = Math.max(spanZ / (2 * tan), spanX / (2 * tan) / Math.max(0.6, camera.aspect), 24000) * 1.2;
+  // Assam is the one state that opens at building level: land close enough that its
+  // tiles start streaming instead of stopping at the state outline.
+  if (s.has_footprints) d = Math.min(d, 270000);
   return {
     t: new THREE.Vector3(x, 0, z),
     p: new THREE.Vector3(x + d * 0.12, d * 1.02, z + d * 0.42),
@@ -515,6 +518,11 @@ function refreshDetail(force) {
   for (const t of want) if (!loaded.has(t.key) && !loading.has(t.key)) queue.push(t);
   pump();
   $('st-tiles').textContent = fmtInt(loaded.size);
+  if (loaded.size) {
+    let buildings = 0;
+    loaded.forEach((e) => { buildings += e.count; });
+    setStatus(`${fmtInt(loaded.size)} Assam building tiles in view · ${fmtInt(buildings)} footprints · click a building`);
+  }
 }
 
 controls.addEventListener('change', () => refreshDetail(false));
