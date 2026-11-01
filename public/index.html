@@ -25,6 +25,10 @@
     /* loader */
     #loader { position: absolute; inset: 0; z-index: 5; display: grid; place-items: center; background: linear-gradient(135deg, #14213d, #1f3358); transition: opacity .7s ease, visibility .7s; }
     #loader.done { opacity: 0; visibility: hidden; }
+    /* no WebGL: get out of the way — the counts, the Example panel and the links still work */
+    #loader.nowebgl { background: transparent; place-items: start center; pointer-events: none; }
+    #loader.nowebgl .lcard { pointer-events: auto; margin-top: 92px; padding: 18px 20px; border-radius: 14px;
+      background: #14213d; box-shadow: 0 18px 46px rgba(20,33,61,.28); max-width: 360px; }
     .lcard { width: min(360px, 80vw); color: #fff; text-align: center; }
     .ltitle { font: 700 26px Georgia, "Times New Roman", serif; margin-bottom: 14px; }
     .lbar { height: 6px; background: rgba(255,255,255,.18); border-radius: 4px; overflow: hidden; }
@@ -171,12 +175,14 @@
 
     <section id="info" class="card" aria-label="About this map">
       <h1>Assam in 3D</h1>
-      <nav class="pagenav" aria-label="Pages">
-        <a href="/" class="on" aria-current="page">Assam 3D</a>
-        <a href="/2d">Assam 2D</a>
-        <a href="/globe">World 3D</a>
-        <a href="/world">World 2D</a>
-        <a href="/docs">Docs</a>
+      <nav class="pagenav" aria-label="Places">
+        <a href="/" class="on" aria-current="page">Assam</a>
+        <a href="/place/kutch">Kutch</a>
+        <a href="/place/koyna">Koyna</a>
+      </nav>
+      <nav class="pagenav" aria-label="Pages" style="grid-template-columns:1fr 1fr; margin-top:6px;">
+        <a href="/2d">World risk map</a>
+        <a href="/docs">API docs</a>
       </nav>
       <p class="sub">Real building footprints from Overture Maps, drawn at their recorded or estimated height. Click any building to see its predicted damage grade and class probabilities.</p>
       <div class="stats">
@@ -189,6 +195,10 @@
         <summary>About the data and its limits</summary>
         <p>Footprints carry no survey attributes, and the dataset has no coordinates. So the predicted grade depends on the inputs in the panel, not on the building's shape or position. Use this map to explore scenarios, not to assess a real building.</p>
         <p>Heights are the 4 m estimated default unless the source records a height. Only 77 buildings have a recorded height.</p>
+        <p>The other places in this view — Kutch (Bhuj, 2001) and Koyna (1967) — have no
+        building footprints packaged, so they are drawn from the earthquake record instead.
+        <a href="/place/kutch">Kutch</a> · <a href="/place/koyna">Koyna</a> ·
+        <a href="/2d">the whole world as a 2D risk map</a>.</p>
         <p class="attr">Building footprints © Overture Maps Foundation, released under ODbL. Boundary: Overture divisions (IN-AS). Model: damage-model-v1 (LightGBM and XGBoost ensemble), trained on the 2015 Gorkha survey.</p>
       </details>
     </section>
@@ -265,6 +275,7 @@
   </aside>
 </div>
 
+<script type="module" src="/static/assam3d/examples.js"></script>
 <script type="module" src="/static/assam3d/viewer.js"></script>
 </body>
 </html>
