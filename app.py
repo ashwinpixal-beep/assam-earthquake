@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Web app for the India 3D map, the world risk map and the damage-grade model.
+"""Web app for the worldwide earthquake hazard maps and the damage-grade model.
 
 Run from the project folder:
     python3 start.py
@@ -7,14 +7,11 @@ Run from the project folder:
     uvicorn app:app --host 0.0.0.0 --port 8000
 
 Pages
-  GET  /                 India in 3D: state outlines, national hazard grid, epicentres,
-                         and Assam's Overture footprints at building level
-  GET  /place/{id}       retired per-state pages, redirect to /
-  GET  /2d               world risk map
-  GET  /2d/assam         Assam hazard detail + Gorkha damage table
+  GET  /                 3D building map of Assam (13,302,299 Overture footprints)
+  GET  /2d               world risk map (the only 2D page)
   GET  /docs             API documentation
-  GET  /3d, /lab         redirect to /
-  GET  /globe            redirect to /, /world redirects to /2d
+  GET  /place/{id}, /2d/assam, /3d, /lab, /globe   redirect to / or /2d
+  GET  /world            redirect to /2d
 
 API
   GET  /api/health       status
@@ -29,11 +26,7 @@ API
   GET  /api/hazard       hazard method, thresholds and cell counts
   GET  /api/events       M5+ earthquake events (GeoJSON)
   GET  /api/damage-zones Gorkha 2015 damage zones by anonymised area
-  GET  /api/india/status       states, in-India epicentres, hazard cells, per-state rows
-  GET  /api/india/hazard       national 0.25 degree hazard grid
-  GET  /api/india/events       catalogued events that fall inside an Indian outline
-  GET  /api/india/state/{id}   one state: outline, events, largest event
-  GET  /api/places             the places registry and its counts
+  GET  /api/places             the 3D places and their counts
   GET  /api/places/{id}        hazard grid + epicentres for one place
   GET  /api/world/status       what the world risk map has loaded
   GET  /api/world/countries    Natural Earth 1:110m countries as lon/lat rings
@@ -58,7 +51,6 @@ from fastapi.staticfiles import StaticFiles
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = HERE
 sys.path.insert(0, ROOT)
-import india as ind  # noqa: E402  (whole-India layer for the 3D map at /)
 import model as dm  # noqa: E402  (provides DamageModel used by the saved bundle)
 import places as pl  # noqa: E402  (the 3D places view and its hazard grids)
 import world as wd  # noqa: E402  (world-scale data for the /2d risk map)
@@ -72,9 +64,8 @@ app = FastAPI(
     title="Worldwide earthquake hazard and building damage",
     version="1.2",
     description=(
-        "A 3D map of the whole of India with its real state outlines, hazard grid and "
-        "epicentres plus Assam's building footprints; a 2D world risk map; and a "
-        "building damage-grade model."
+        "World-scale 3D and 2D views of the global M5+/M6+ earthquake catalogue, a "
+        "2 degree hazard grid, country outlines, and a building damage-grade model."
     ),
     # /docs is our own human-readable page, so the generated Swagger UI is turned off.
     docs_url=None,
@@ -174,13 +165,14 @@ GRADE_HELP = {
 # ---------------------------------------------------------------- pages
 @app.get("/")
 def index():
-    # The 3D page is the whole country. Assam keeps its building footprints inside it.
+    # Assam, with every building footprint, is the 3D page again
     return FileResponse(os.path.join(PUBLIC, "index.html"))
 
 
 @app.get("/place/{pid}")
 def place_page(pid: str):
-    # The per-state 3D pages are retired; the country view contains them.
+    # The per-state 3D pages and the old 2D Assam detail are retired: the site is the
+    # Assam 3D map and the 2D world risk map, nothing else.
     return RedirectResponse("/", status_code=302)
 
 
@@ -192,7 +184,7 @@ def hazard_2d():
 
 @app.get("/2d/assam")
 def hazard_2d_assam():
-    return FileResponse(os.path.join(PUBLIC, "2d.html"))
+    return RedirectResponse("/2d", status_code=301)
 
 
 @app.get("/globe")
@@ -397,35 +389,6 @@ def damage_zones():
     return _read_hazard("damage_zones.json")
 
 
-# ---------------------------------------------------------------- India API
-@app.get("/api/india/status")
-def india_status():
-    """Whole-country summary: states, in-India epicentres, hazard cells, footprints."""
-    return ind.status()
-
-
-@app.get("/api/india/hazard")
-def india_hazard():
-    """National 0.25 degree hazard grid, clipped to Indian land."""
-    return ind.hazard_national()
-
-
-@app.get("/api/india/events")
-def india_events(min_mag: float = Query(4.0, ge=1.0, le=9.9)):
-    """Only the catalogued events that fall inside an Indian state outline."""
-    rows = [e for e in ind.in_india_events() if e["mag"] >= min_mag]
-    return {"count": len(rows), "min_mag": min_mag, "events": rows}
-
-
-@app.get("/api/india/state/{sid}")
-def india_state(sid: str):
-    """One state or union territory: outline, its epicentres, its largest event."""
-    try:
-        return ind.state_detail(sid)
-    except KeyError:
-        raise HTTPException(404, detail=f"No state with id {sid!r}.")
-
-
 # ---------------------------------------------------------------- world API
 @app.get("/api/world/status")
 def world_status():
@@ -498,25 +461,25 @@ DOCS_HTML = """<!doctype html>
 </head>
 <body>
 <header><div class="wrap">
-  <div><h1>API documentation</h1><p>India in 3D and the world risk map · FastAPI</p></div>
-  <nav><a href="/">India 3D</a><a href="/2d">World risk map</a></nav>
+  <div><h1>API documentation</h1><p>Earthquake places in 3D and the world risk map · FastAPI</p></div>
+  <nav><a href="/">3D places</a><a href="/2d">World risk map</a></nav>
 </div></header>
 <main class="wrap">
   <p>Every endpoint returns JSON except the pages below. The machine-readable schema is at
   <a href="/openapi.json"><code>/openapi.json</code></a>; this page is the human-readable reference.</p>
 
   <h2>Pages</h2>
-  <div class="ep"><span class="verb get">GET</span><code class="path">/</code><p><b>India in 3D.</b> The whole country on one map: 36 state and union-territory outlines, the national 0.25° hazard grid (2,651 cells), 1,463 catalogued M4+ epicentres, and Assam's 13,302,299 Overture building footprints streamed as 0.1° tiles. Click a state for its record and to score a building profile; zoom into Assam and click a building for its damage grade. The Example panel scores 30 real held-out survey records. Layers can be switched off from the map.</p></div>
-  <div class="ep"><span class="verb get">GET</span><code class="path">/place/{id}</code><p><b>Retired.</b> The per-state 3D pages (<code>kutch</code>, <code>koyna</code>) redirect to <code>/</code>, which contains every state. The place data they used is still served at <code>/api/places</code>.</p></div>
+  <div class="ep"><span class="verb get">GET</span><code class="path">/</code><p><b>Assam in 3D.</b> 13,302,299 Overture building footprints streamed as 0.1° tiles; click a building for a damage grade; the Example panel scores 30 real held-out survey records.</p></div>
+  <div class="ep"><span class="verb get">GET</span><code class="path">/place/{id}</code><p><b>Retired.</b> The per-state 3D pages (<code>kutch</code>, <code>koyna</code>) redirect to <code>/</code>. Their data is still served at <code>/api/places/{id}</code>.</p></div>
   <div class="ep"><span class="verb get">GET</span><code class="path">/2d</code><p><b>World risk map.</b> 2° hazard cells, the global M5+ catalogue with a magnitude slider, country outlines and the strongest events.</p></div>
-  <div class="ep"><span class="verb get">GET</span><code class="path">/2d/assam</code><p><b>Assam hazard detail.</b> The regional 0.25° grid, M5+ events and the 2015 Gorkha damage table for 31 anonymised areas.</p></div>
-  <div class="ep"><span class="verb get">GET</span><code class="path">/docs</code><p>This page. <code>/globe</code> redirects to <code>/</code> and <code>/world</code> to <code>/2d</code>.</p></div>
+  <div class="ep"><span class="verb get">GET</span><code class="path">/2d/assam</code><p><b>Retired.</b> The old 2D Assam hazard detail redirects to <code>/2d</code>: the 2D side is the world risk map and nothing else.</p></div>
+  <div class="ep"><span class="verb get">GET</span><code class="path">/docs</code><p>This page. <code>/globe</code>, <code>/3d</code> and <code>/lab</code> redirect to <code>/</code>; <code>/world</code> to <code>/2d</code>.</p></div>
 
   <h2>Model</h2>
   <div class="ep"><span class="verb get">GET</span><code class="path">/api/health</code><p>Status: <code>ok</code>, <code>model_loaded</code>, <code>hazard_ready</code>.</p></div>
   <div class="ep"><span class="verb get">GET</span><code class="path">/api/model</code><p>Model name, version, accuracy, macro-F1, per-class F1 and the split protocol.</p></div>
   <div class="ep"><span class="verb get">GET</span><code class="path">/api/metrics</code><p>Full final metrics: ensemble and LightGBM-only, per class, confusion matrix, best iterations.</p></div>
-  <div class="ep"><span class="verb get">GET</span><code class="path">/api/options</code><p>The 38 survey form fields with <code>kind</code>, <code>min</code>, <code>max</code>, allowed <code>values</code> and <code>default</code>.</p></div>
+  <div class="ep"><span class="verb get">GET</span><code class="path">/api/options</code><p>The 38 survey form fields with <code>kind</code>, <code>min</code>, <code>max</code>, allowed <code>values</code> and <code>default</code>. The categorical fields keep the survey's own letter codes (<code>t</code>, <code>r</code>, <code>n</code>, …) because those are what the model was trained on; the 3D page shows each one as plain words.</p></div>
   <div class="ep"><span class="verb post">POST</span><code class="path">/api/predict</code>
     <p>Damage grade for one building. Send all 38 fields from <code>/api/options</code> as a JSON object.</p>
     <pre>curl -s -X POST localhost:8000/api/predict \\
@@ -548,26 +511,10 @@ DOCS_HTML = """<!doctype html>
   <div class="ep"><span class="verb get">GET</span><code class="path">/api/events</code><p>153 magnitude 5+ events in the map box as a GeoJSON FeatureCollection of points (mag, time, depth, place).</p></div>
   <div class="ep"><span class="verb get">GET</span><code class="path">/api/damage-zones</code><p>Gorkha 2015 damage by anonymised area: zone, buildings surveyed, grade-3 share, accuracy, risk score.</p></div>
 
-  <h2>India</h2>
-  <div class="ep"><span class="verb get">GET</span><code class="path">/api/india/status</code><p>Whole-country summary: <code>states</code> (36), <code>events</code> (1,463 catalogued M4+ events located inside an Indian outline), <code>events_catalogue</code> (18,501, the size of the bundled India-region catalogue), <code>events_m5</code> (158), <code>cells</code> (2,651), <code>footprint_states</code> (<code>["assam"]</code>), <code>footprint_buildings</code> (13,302,299), the hazard method and disclaimer, and <code>per_state</code> — one row per state with <code>events</code>, <code>events_m5</code>, <code>largest</code> and <code>has_footprints</code>.</p>
-    <pre>{"states":36,"events":1463,"events_catalogue":18501,"events_m5":158,"largest":7.7,
- "cells":2651,"footprint_states":["assam"],
- "per_state":[{"id":"jammu-kashmir","name":"Jammu &amp; Kashmir","events":500,"events_m5":55,"largest":7.6}, …]}</pre>
-  </div>
-  <div class="ep"><span class="verb get">GET</span><code class="path">/api/india/hazard</code><p>The national hazard grid: 0.25° cells over Indian land, each <code>[lon, lat, class, log10 energy, events, largest magnitude]</code> with class <code>r</code>/<code>y</code>/<code>g</code> from the terciles, plus <code>meta</code> with the method, thresholds (red 6.48, yellow 5.22 log10 J) and disclaimer. The energy field uses every event in the bundled catalogue, including neighbouring countries, so the border belts are not cut off.</p></div>
-  <div class="ep"><span class="verb get">GET</span><code class="path">/api/india/events</code>
-    <p>Only the catalogued events that fall inside an Indian state outline, strongest first.</p>
-    <table><tr><th>Query</th><th>Type</th><th>Default</th><th>Meaning</th></tr>
-      <tr><td><code>min_mag</code></td><td>float</td><td>4.0</td><td>Magnitude floor</td></tr></table>
-    <pre>{"count":1463,"min_mag":4.0,
- "events":[{"lon":70.232,"lat":23.419,"mag":7.7,"depth":16.0,"time":"2001-01-26",
-            "place":"17 km NW of Bhachau, India"}, …]}</pre>
-  </div>
-  <div class="ep"><span class="verb get">GET</span><code class="path">/api/india/state/{id}</code><p>One state or territory: its <code>bbox</code>, <code>centre</code>, <code>rings</code> (lon/lat outlines), its <code>events</code>, and <code>meta</code> with the counts and the largest event. Ids are the slugs in <code>states.json</code> — <code>assam</code>, <code>gujarat</code>, <code>jammu-kashmir</code>, <code>andaman</code>, … An unknown id returns 404.</p></div>
-
-  <h2>Places (retired pages, data still served)</h2>
-  <div class="ep"><span class="verb get">GET</span><code class="path">/api/places</code><p>The places in the 3D view, with what each one has: <code>assam</code> (13.3 million building footprints) and the two catalogue-only places, <code>kutch</code> and <code>koyna</code>.</p></div>
-  <div class="ep"><span class="verb get">GET</span><code class="path">/api/places/{id}</code><p>One place: its box, the hazard grid computed inside that box, and its epicentres. Assam has no computed grid here (it keeps its own 0.25° regional grid on <code>/2d/assam</code>).</p>
+  <h2>World</h2>
+  <h2>Places</h2>
+  <div class="ep"><span class="verb get">GET</span><code class="path">/api/places</code><p>The catalogue-only places, kept as a data endpoint after their pages were retired: <code>kutch</code> and <code>koyna</code>, each with its hazard grid and epicentres. Assam is served by the 3D map, not here.</p></div>
+  <div class="ep"><span class="verb get">GET</span><code class="path">/api/places/{id}</code><p>One place: its box, the hazard grid computed inside that box, and its epicentres. The page that drew it is retired, but the numbers are still here.</p>
     <pre>{"id":"kutch","name":"Kutch, Gujarat","bbox":[68.4,22.0,72.2,24.9],
  "meta":{"events":150,"events_m5":16,"cells_total":320,"largest":{"mag":7.7,"time":"2001-01-26"}},
  "cells":[[70.2,23.35,"r",10.17,12,7.7]],
@@ -597,9 +544,8 @@ DOCS_HTML = """<!doctype html>
   <h2>Static files</h2>
   <table>
     <tr><th>Path</th><th>Contents</th></tr>
-    <tr><td><code>/static/india/states.json</code></td><td>36 state and union-territory outlines, 29,503 points, 395 KB (built by <code>scripts/build_india_states.py</code>)</td></tr>
-    <tr><td><code>/static/india/india.js</code></td><td>The country view: state fills and borders, hazard columns, epicentres, Assam tiles, state sheet</td></tr>
-    <tr><td><code>/static/assam3d/tiles/</code></td><td>837 footprint tiles, 0.1° each, 13,302,299 buildings (Overture, ODbL)</td></tr>
+    <tr><td><code>/static/assam3d/viewer.js</code></td><td>The 3D Assam view: tile streaming, building picking, damage-model form</td></tr>
+    <tr><td><code>/static/assam3d/examples.js</code></td><td>The Example panel (runs without WebGL)</td></tr>
     <tr><td><code>/static/world/countries.json</code></td><td>177 countries as lon/lat rings (Natural Earth 1:110m)</td></tr>
     <tr><td><code>/static/world/cities.json</code></td><td>4,442 cities, population 100,000+ (GeoNames)</td></tr>
     <tr><td><code>data/quakes/world_catalogue.json</code></td><td>30,648 events, compact integer encoding, CC BY 4.0</td></tr>
@@ -607,9 +553,6 @@ DOCS_HTML = """<!doctype html>
 
   <h2>Notes</h2>
   <div class="note">
-    <b>One country, one page.</b> The 3D view is the whole of India; Assam is the only state with
-    packaged building footprints, so it is the only one that opens at building level. Every other state
-    is drawn from the earthquake record — nothing is invented.<br><br>
     <b>Not a safety certificate.</b> Grades are statistical estimates from the 2015 Gorkha survey.
     On the world pages the prediction depends on the building profile you enter, not on the coordinates,
     because the training survey has no coordinates.

@@ -9,11 +9,11 @@ document.getElementById('shared-css').textContent = SHARED_CSS;
 const BASE = '/static/assam3d/tiles/';
 const REF_LON = 91.7, REF_LAT = 26.2;                  // projection centre (metres from here)
 const KX = 111320 * Math.cos(REF_LAT * Math.PI / 180), KY = 110574;
-const DETAIL_MAX = 160000;                              // most building outlines in memory at once (nearest tiles first)
-const DETAIL_MIN = 40000;                               // the floor, on slow devices
+const DETAIL_MAX = 200000;                              // most building outlines in memory at once (nearest tiles first)
+const DETAIL_MIN = 50000;                               // the floor, on slow devices
 let detailBudget = DETAIL_MAX;                          // adapts to the frame rate (see the loop)
-const DETAIL_MAX_DIST = 60000;                          // above this camera distance, overview only
-const CONCURRENCY = 3;
+const DETAIL_MAX_DIST = 260000;                         // above this camera distance, overview only
+const CONCURRENCY = 4;
 const PENDING_RGB = [0.48, 0.52, 0.60];                 // neutral colour until a grade is known
 const PENDING_HEX = '#7a8699';
 const HOME = { x: 92.9, lat: 26.1 };
@@ -109,7 +109,17 @@ function stepFlight(now) {
 }
 controls.addEventListener('start', () => { flight = null; });
 
+// The home view sits close enough that real footprints are on screen immediately: one
+// stretch of the Brahmaputra valley at a 3/4 angle, not a distant state overview. The
+// dock's "Whole state" button is the way back out.
 function homeView() {
+  const [cx, cz] = project(HOME.x, HOME.lat);
+  return { t: new THREE.Vector3(cx, 0, cz), p: new THREE.Vector3(cx + 30000, 235000, cz + 115000) };
+}
+
+// The dock's "Whole state" button: far enough out to see the outline, where the tiles read
+// as a density summary rather than individual buildings.
+function stateView() {
   const [cx, cz] = project(HOME.x, HOME.lat);
   return { t: new THREE.Vector3(cx, 0, cz), p: new THREE.Vector3(cx + 60000, 900000, cz + 650000) };
 }
@@ -257,12 +267,13 @@ async function init() {
   // intro: fly down from high above the state to the home view, then hand over to the user
   const [cx, cz] = project(HOME.x, HOME.lat);
   controls.target.set(cx, 0, cz);
-  camera.position.set(cx + 5000, 1100000, cz + 20000);
+  camera.position.set(cx + 5000, 1400000, cz + 40000);
   controls.update();
   const h = homeView();
   flyTo(h.t, h.p, 2800);
   setTimeout(() => $('loader').classList.add('done'), 350);
-  setStatus('Overview of the state. Zoom in to load building outlines.');
+  setStatus('Loading building outlines…');
+  setTimeout(() => refreshDetail(true), 200);
 }
 
 function addOutline(geom) {
@@ -366,7 +377,7 @@ function refreshDetail(force) {
   $('st-tiles').textContent = fmtInt(loaded.size);
   if (queue.length || inFlight) setStatus(`Loading ${queue.length + inFlight} tile(s)…`);
   else if (loaded.size) setStatus(`${fmtInt(buildings)} building outlines in view. Click one to predict its grade.`);
-  else setStatus('Overview of the state. Zoom in to load building outlines.');
+  else setStatus('Zoom in a little closer to load building outlines.');
 }
 
 controls.addEventListener('change', () => refreshDetail(false));
@@ -601,7 +612,7 @@ cityButtons.forEach((btn) => {
   });
 });
 $('reset-view').addEventListener('click', () => {
-  const h = homeView();
+  const h = stateView();
   flyTo(h.t, h.p, 1600);
   setActiveCity(null);
   setTimeout(() => refreshDetail(true), 200);

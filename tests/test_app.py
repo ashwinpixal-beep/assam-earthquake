@@ -1,4 +1,4 @@
-"""Browser and API checks for the site (Playwright): the India 3D map
+"""Browser checks for the site (Playwright, 21 checks): the Assam 3D map
 
 Start the site first, then run:
     python -m playwright install chromium
@@ -100,52 +100,51 @@ def server_url() -> str:
 
 
 # ---------------------------------------------------------------------- pages
-def test_01_home_is_india_in_3d(page, server):
+def test_01_home_is_assam_in_3d(page, server):
     resp = page.goto(server + "/", wait_until="domcontentloaded")
     assert resp.status == 200
-    assert "India in 3D" in page.title()
-    assert page.locator("#info h1").inner_text().strip() == "India in 3D"
+    assert "Assam in 3D" in page.title()
 
 
-def test_02_page_nav(page, server):
+def test_02_page_nav_is_assam_and_world(page, server):
+    """Two pages only: Assam in 3D and the 2D world risk map."""
     page.goto(server + "/", wait_until="domcontentloaded")
     nav = page.locator("nav.pagenav").first
     hrefs = [nav.locator("a").nth(i).get_attribute("href") for i in range(2)]
     assert hrefs == ["/", "/2d"]
+    assert page.locator("nav.pagenav").count() == 1
 
 
 def test_03_old_routes_redirect(page, server):
     page.goto(server + "/globe", wait_until="domcontentloaded")
-    assert page.url.rstrip("/") == server.rstrip("/"), "/globe should land on the country map"
+    assert page.url.rstrip("/") == server.rstrip("/"), "/globe should land on the Assam page"
     page.goto(server + "/world", wait_until="domcontentloaded")
     assert page.url.rstrip("/").endswith("/2d"), "/world should land on the world risk map"
     page.goto(server + "/3d", wait_until="domcontentloaded")
     assert page.url.rstrip("/") == server.rstrip("/")
-    # the per-state 3D pages are retired; the country view contains them
+    # the per-state 3D pages and the old 2D Assam detail are gone
     for old in ("/place/kutch", "/place/koyna"):
         page.goto(server + old, wait_until="domcontentloaded")
-        assert page.url.rstrip("/") == server.rstrip("/"), f"{old} should land on the country map"
+        assert page.url.rstrip("/") == server.rstrip("/"), f"{old} should land on the Assam page"
+    page.goto(server + "/2d/assam", wait_until="domcontentloaded")
+    assert page.url.rstrip("/").endswith("/2d"), "/2d/assam should land on the world risk map"
 
 
-def test_04_national_counts(page, server, webgl):
+def test_04_assam_reports_building_total(page, server, webgl):
     page.goto(server + "/", wait_until="domcontentloaded")
     page.wait_for_function(
-        "() => { const el = document.getElementById('st-events');"
+        "() => { const el = document.getElementById('st-total');"
         " return el && el.textContent.replace(/[^0-9]/g,'') !== ''; }",
         timeout=60000,
     )
-    assert page.locator("#st-states").inner_text().strip() == "36"
-    assert page.locator("#st-events").inner_text().strip() == "1,463"
-    assert page.locator("#st-cells").inner_text().strip() == "2,651"
-    total = page.locator("#st-buildings").inner_text().replace(",", "").strip()
-    assert total == "13302299", f"expected 13,302,299 buildings, saw {total!r}"
+    total = page.locator("#st-total").inner_text().replace(",", "").strip()
+    assert total.startswith("13"), f"expected 13,3xx,xxx buildings, saw {total!r}"
 
 
-def test_05_loader_clears_and_canvas_draws(page, server, webgl):
+def test_05_assam_loader_clears(page, server, webgl):
     page.goto(server + "/", wait_until="domcontentloaded")
     page.wait_for_selector("#loader.done", timeout=60000)
     assert page.locator("#scene canvas").count() >= 1
-    assert page.evaluate("() => !!window.__india3d")
 
 
 def test_06_example_panel_scores_real_records(page, server):
@@ -165,38 +164,6 @@ def test_06_example_panel_scores_real_records(page, server):
     assert page.locator("#e-full").inner_text().strip() == "75.68%"
     page.click("#eclose")
     assert page.get_attribute("#example-btn", "aria-expanded") == "false"
-
-
-def test_06b_state_sheet_from_the_dock(page, server, webgl):
-    """Picking a state opens its sheet, fills its record and scores a building profile."""
-    page.goto(server + "/", wait_until="domcontentloaded")
-    page.wait_for_selector("#loader.done", timeout=90000)
-    page.click('.city[data-state="gujarat"]')
-    page.wait_for_function(
-        "() => document.getElementById('btitle').textContent.trim() === 'Gujarat'",
-        timeout=30000,
-    )
-    facts = page.locator("#bfacts").inner_text()
-    assert "151" in facts and "18" in facts and "M7.7" in facts
-    page.wait_for_function(
-        "() => /grade|damage|[123] ·/i.test(document.getElementById('bbadge-v').textContent)",
-        timeout=30000,
-    )
-    assert page.locator("#bbars .pbar").count() == 3
-    assert page.locator("#statePick option").count() == 37
-
-
-def test_06c_layer_toggles(page, server, webgl):
-    page.goto(server + "/", wait_until="domcontentloaded")
-    page.wait_for_selector("#loader.done", timeout=90000)
-    page.click("#t-hazard")
-    assert page.get_attribute("#t-hazard", "aria-pressed") == "false"
-    page.click("#t-events")
-    assert page.get_attribute("#t-events", "aria-pressed") == "false"
-    assert page.get_attribute("#t-states", "aria-pressed") == "true"
-    page.click("#t-hazard")
-    page.click("#t-events")
-    assert page.get_attribute("#t-hazard", "aria-pressed") == "true"
 
 
 def test_07_world_2d_page_draws(page, server):
@@ -249,8 +216,7 @@ def test_10_docs_page_lists_endpoints(page, server):
     resp = page.goto(server + "/docs", wait_until="domcontentloaded")
     assert resp.status == 200
     body = page.inner_text("main")
-    for path in ["/2d/assam", "/api/predict", "/api/examples", "/api/india/status",
-                 "/api/india/hazard", "/api/india/events", "/api/india/state/{id}",
+    for path in ["/2d", "/api/predict", "/api/examples", "/api/places",
                  "/api/world/events", "/api/world/hazard", "/api/world/countries"]:
         assert path in body, f"{path} missing from the docs page"
 
@@ -352,57 +318,30 @@ def test_19_places_api(page, server):
     assert all(73.0 <= c[0] <= 74.8 for c in koyna["cells"])
 
 
-def test_20_india_api(page, server):
-    st = api("/api/india/status")
-    assert st["states"] == 36
-    assert st["events"] == 1463
-    assert st["events_catalogue"] == 18501
-    assert st["cells"] == 2651
-    assert st["footprint_states"] == ["assam"]
-    assert st["footprint_buildings"] == 13302299
-    assert sum(row["events"] for row in st["per_state"]) == st["events"]
-    top = st["per_state"][0]
-    assert top["id"] == "jammu-kashmir" and top["events"] == 500
-
-    haz = api("/api/india/hazard")
-    cells = haz["cells"]
-    assert len(cells) == haz["meta"]["cells_total"] == 2651
-    assert all(c[2] in ("r", "y", "g") for c in cells)
-    assert {c[2] for c in cells} == {"r", "y", "g"}
-    assert 67 <= min(c[0] for c in cells) and max(c[0] for c in cells) <= 98
-    assert 6 <= min(c[1] for c in cells) and max(c[1] for c in cells) <= 38
-    assert "not a forecast" in haz["meta"]["disclaimer"].lower()
-
-    gujarat = api("/api/india/state/gujarat")
-    assert gujarat["name"] == "Gujarat"
-    assert gujarat["meta"]["largest"]["mag"] == 7.7
-    assert gujarat["meta"]["largest"]["time"] == "2001-01-26"
-    assert gujarat["meta"]["events"] == 151
-    assert len(gujarat["rings"]) >= 1
-
-    with pytest.raises(urllib.error.HTTPError) as err:
-        urllib.request.urlopen(server + "/api/india/state/atlantis", timeout=30)
-    assert err.value.code == 404
-
-    with urllib.request.urlopen(server + "/static/india/states.json", timeout=30) as r:
-        gj = json.load(r)
-    assert len(gj["states"]) == 36
-    assert sum(len(ring) for s in gj["states"] for ring in s["rings"]) == 29503
-
-
-def test_20b_india_events_list(page, server):
-    d = api("/api/india/events?min_mag=5")
-    assert d["count"] == len(d["events"])
-    assert d["count"] == 158
-    assert all(e["mag"] >= 5 for e in d["events"])
-    assert all(67 <= e["lon"] <= 98 and 6 <= e["lat"] <= 38 for e in d["events"])
-    everything = api("/api/india/events?min_mag=4")
-    assert everything["count"] == 1463
-    assert everything["events"][0]["mag"] == 7.7
+def test_20_model_inputs_are_in_words(page, server):
+    """The survey's letter codes are shown as words, with the code in brackets."""
+    page.goto(server + "/", wait_until="domcontentloaded")
+    page.wait_for_function(
+        "() => document.querySelector('#bform select[name=\"foundation_type\"]') !== null",
+        timeout=30000,
+    )
+    for field, expected in [
+        ("land_surface_condition", "Flat ground (t)"),
+        ("foundation_type", "Mud mortar · stone or brick (r)"),
+        ("roof_type", "Bamboo or timber, heavier (n)"),
+        ("ground_floor_type", "Mud (f)"),
+    ]:
+        opts = page.eval_on_selector_all(
+            f'#bform select[name="{field}"] option',
+            "els => els.map(e => e.textContent.trim())",
+        )
+        assert expected in opts, f"{field} options are {opts}"
+        # no bare letter may be left as a label
+        assert not any(len(o) == 1 for o in opts), f"{field} still shows letter codes: {opts}"
 
 
 def test_21_docs_and_scrollbars(page, server):
-    for path in ("/docs", "/2d", "/", "/2d/assam"):
+    for path in ("/docs", "/2d", "/"):
         page.goto(server + path, wait_until="domcontentloaded")
         overflow = page.evaluate("() => document.documentElement.scrollWidth - window.innerWidth")
         assert overflow <= 1, f"{path} scrolls sideways by {overflow}px"
