@@ -71,7 +71,7 @@
     <h1>Earthquake risk · World</h1>
     <span class="sub">Ranked from the USGS record on a 2° grid</span>
     <nav aria-label="Pages">
-      <a href="/">3D places</a>
+      <a href="/">Assam 3D</a>
       <a href="/2d" class="on" aria-current="page">World risk map</a>
       <a href="/docs">API docs</a>
     </nav>
@@ -127,9 +127,9 @@
       <details>
         <summary>Where the building model fits</summary>
         <p>The damage model needs building attributes, not coordinates, so it runs the same anywhere.
-          The <a href="/">3D places view</a> runs it for Assam (13.3 million real footprints),
-          Kutch and Koyna, and the <b>Example</b> panel there scores 30 real held-out survey
-          buildings against the grades the survey recorded.</p>
+          The <a href="/">3D Assam view</a> runs it on 13.3 million real footprints, and the
+          <b>Example</b> panel there scores 30 real held-out survey buildings against the grades
+          the survey recorded.</p>
       </details>
 
       <p class="attr" id="attrLine">—</p>
@@ -336,7 +336,7 @@
       .setLatLng(e.latlng)
       .setContent(
         `<b>${lat.toFixed(3)}°, ${lng.toFixed(3)}°</b><br>` +
-        `<a href="/globe">Open the globe here</a> to predict a damage grade for this point.`,
+        `<a href="/">Open the Assam 3D map</a> to predict a damage grade from a building profile.`,
       )
       .openOn(map);
   });

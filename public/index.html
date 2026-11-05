@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="All of India in 3D: 36 state outlines, a national earthquake hazard grid, every catalogued epicentre, and 13.3 million real building footprints in Assam.">
-  <title>India in 3D · earthquake hazard and building damage</title>
+  <meta name="description" content="Explore 13.3 million real building footprints across Assam in 3D, and get a damage-grade prediction for any building.">
+  <title>Assam in 3D · Building damage model</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%2314213d'/%3E%3Crect x='3' y='6' width='4' height='7' fill='%23d69e2e'/%3E%3Crect x='9' y='3' width='4' height='10' fill='%23d69e2e'/%3E%3C/svg%3E">
   <style>
     :root { --ink:#1c2530; --ink2:#3b4856; --muted:#6b7785; --line:#dfe5ec; --navy:#14213d; --navy2:#1f3358; --amber:#b7791f; --gold:#d69e2e; }
@@ -149,19 +149,6 @@
     @media (max-width: 760px) and (min-height: 0) {
       .app.open #dock { display: none; }
     }
-    /* layer toggles */
-    .layers { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
-    .layers button { border:1px solid #d3dbe5; background:#fff; color:var(--ink2); border-radius:999px; padding:5px 10px; font-size:11.5px; font-weight:600; cursor:pointer; transition:background .2s,border-color .2s,color .2s; }
-    .layers button .d { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:5px; background:#c9d3df; vertical-align:0; }
-    .layers button.on { background:var(--navy); border-color:var(--navy); color:#fff; }
-    .layers button.on .d { background:var(--gold); }
-    #statePick { width:100%; margin-top:6px; padding:6px 8px; border-radius:8px; border:1px solid #cfd7e1; font:13px system-ui,sans-serif; color:var(--navy); background:#fff; }
-    .city select { border:0; background:transparent; font:inherit; color:inherit; }
-    #stateNote { font-size:12.5px; color:var(--ink2); margin:10px 0 4px; }
-    .biglist { margin-top:10px; }
-    .biglist div { display:flex; gap:8px; align-items:baseline; font-size:12.5px; color:var(--ink2); padding:4px 0; border-bottom:1px solid #eef2f6; }
-    .biglist b { color:var(--navy); }
-    .lg-dot { display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:6px; vertical-align:0; }
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { transition-duration: 0ms !important; animation-duration: 0ms !important; }
     }
@@ -178,7 +165,7 @@
 
     <div id="loader" role="status" aria-live="polite">
       <div class="lcard">
-        <div class="ltitle">India in 3D</div>
+        <div class="ltitle">Assam in 3D</div>
         <div class="lbar"><i id="loadbar"></i></div>
         <div class="lsub" id="loadtext">Starting…</div>
       </div>
@@ -187,85 +174,62 @@
     <button id="example-btn" class="cta" type="button" aria-controls="epanel" aria-expanded="false">Example: test the model</button>
 
     <section id="info" class="card" aria-label="About this map">
-      <h1>India in 3D</h1>
+      <h1>Assam in 3D</h1>
       <nav class="pagenav" aria-label="Pages" style="grid-template-columns:1fr 1fr;">
-        <a href="/" class="on" aria-current="page">India, 3D</a>
+        <a href="/" class="on" aria-current="page">Assam, 3D</a>
         <a href="/2d">World risk map</a>
       </nav>
-      <p class="sub">Every state and union territory drawn from its real boundary, the national earthquake
-      hazard grid, the epicentres behind it, and Assam's real building footprints at full detail.
-      Click a state for its record; zoom into Assam and click a building for its damage grade.</p>
+      <p class="sub">Real building footprints from Overture Maps, drawn at their recorded or estimated height. Click any building to see its predicted damage grade and class probabilities.</p>
       <div class="stats">
-        <div><b id="st-states">–</b><span>states and union territories</span></div>
-        <div><b id="st-events">–</b><span>M4+ epicentres inside India</span></div>
-        <div><b id="st-cells">–</b><span>hazard cells, 0.25°</span></div>
-        <div><b id="st-buildings">–</b><span>building footprints, Assam</span></div>
+        <div><b id="st-total">–</b><span>buildings in Assam</span></div>
+        <div><b id="st-est">–</b><span>heights estimated</span></div>
+        <div><b id="st-tiles">0</b><span>detail tiles in view</span></div>
+        <div><b id="st-tiles-all">–</b><span>tiles, 0.1° each</span></div>
       </div>
-      <div class="layers" role="group" aria-label="Layers">
-        <button id="t-states" type="button" class="on" aria-pressed="true"><i class="d"></i>States</button>
-        <button id="t-hazard" type="button" class="on" aria-pressed="true"><i class="d"></i>Hazard</button>
-        <button id="t-events" type="button" class="on" aria-pressed="true"><i class="d"></i>Epicentres</button>
-        <button id="t-buildings" type="button" class="on" aria-pressed="true"><i class="d"></i>Assam buildings</button>
-      </div>
-      <select id="statePick" aria-label="Jump to a state"></select>
-      <div class="lg-row" style="font-size:11.5px;color:var(--muted);margin-top:8px;"><span id="st-tiles">0</span> Assam building tiles in memory</div>
-      <p class="attr" id="methodLine" style="margin:8px 0 0;">–</p>
       <details>
         <summary>About the data and its limits</summary>
-        <p>Boundaries are the public Survey of India state outlines (MIT-licensed set), snapped to a
-        0.02° grid by <code>scripts/build_india_states.py</code>: 36 states and union territories, 29,503 points.</p>
-        <p>Epicentres are the bundled USGS catalogue for the India region, M4.0+ from 2000-01-01 to
-        2026-10-26 (18,501 events). Only the events that fall inside an Indian outline are counted per
-        state — 1,463 of them; the rest are Afghanistan, China, Nepal, Myanmar and the seas around India.</p>
-        <p>Only Assam has packaged building footprints (837 tiles, 13,302,299 buildings, Overture Maps).
-        Every other state is shown from the earthquake record. Nothing is invented.</p>
-        <p class="attr">Footprints © Overture Maps Foundation (ODbL). Boundaries from the Survey of India
-        set (MIT). Catalogue: USGS. Model: damage-model-v1 (LightGBM + XGBoost ensemble), trained on the
-        2015 Gorkha survey.</p>
+        <p>Every one of the 13,302,299 footprints in the tile set is drawn: the tiles stream in as you
+        move and zoom, nearest first, so the whole state fills in with real buildings rather than
+        stand-in blocks. Zoom out past about 150 km and you see the density summary instead, one bar
+        per 0.1° tile.</p>
+        <p>Footprints carry no survey attributes, and the dataset has no coordinates. So the predicted grade depends on the inputs in the panel, not on the building's shape or position. Use this map to explore scenarios, not to assess a real building.</p>
+        <p>Heights are the 4 m estimated default unless the source records a height. Only 77 buildings have a recorded height.</p>
+        <p>The 2D side of the site is <a href="/2d">the world risk map</a> — the whole world, nothing else.</p>
+        <p class="attr">Building footprints © Overture Maps Foundation, released under ODbL. Boundary: Overture divisions (IN-AS). Model: damage-model-v1 (LightGBM and XGBoost ensemble), trained on the 2015 Gorkha survey.</p>
       </details>
     </section>
 
     <div id="legend" class="card" aria-label="Legend">
-      <div class="lg-title">Hazard, from the record</div>
-      <i class="sw" style="background:linear-gradient(90deg,#2f855a,#d69e2e,#c53030)"></i>
-      <div class="lg-cap"><span>lower third</span><span>top third</span></div>
-      <div class="lg-row" id="lg-hazard" style="font-size:11px;color:var(--muted);margin-top:4px;">–</div>
-      <div class="lg-title" style="margin-top:10px">Epicentres</div>
-      <div class="lg-row"><i class="lg-dot" style="background:#d64545"></i>M7 and above</div>
-      <div class="lg-row"><i class="lg-dot" style="background:#e08a2c"></i>M6 to 6.9</div>
-      <div class="lg-row"><i class="lg-dot" style="background:#c9a227"></i>M4 to 5.9</div>
-      <div class="lg-title" style="margin-top:10px">Buildings (Assam only)</div>
+      <div class="lg-title">Building height</div>
+      <i class="sw" style="background:linear-gradient(90deg,#cfd8e3,#2f4d6b)"></i>
+      <div class="lg-cap"><span>0 m</span><span>30 m +</span></div>
       <i class="sw" style="background:linear-gradient(90deg,#f0c77a,#a0622a)"></i>
-      <div class="lg-cap"><span>estimated height</span><span>measured</span></div>
+      <div class="lg-cap"><span>estimated</span><span>measured</span></div>
       <div class="lg-cap" style="margin-top:6px"><span>After a click, the selected building takes its predicted grade colour.</span></div>
     </div>
 
-    <div id="dock" class="card" role="toolbar" aria-label="Jump to a state">
-      <button class="city" data-state="jammu-kashmir">Jammu &amp; Kashmir</button>
-      <button class="city" data-state="gujarat">Gujarat</button>
-      <button class="city" data-state="assam">Assam</button>
-      <button class="city" data-state="arunachal">Arunachal</button>
-      <button class="city" data-state="himachal">Himachal</button>
-      <button class="city" data-state="manipur">Manipur</button>
-      <button class="city" data-state="uttarakhand">Uttarakhand</button>
-      <button class="city ghost" id="reset-view">Whole country</button>
+    <div id="dock" class="card" role="toolbar" aria-label="Jump to a city">
+      <button class="city" data-lat="26.1445" data-lon="91.7362">Guwahati</button>
+      <button class="city" data-lat="27.4728" data-lon="94.9120">Dibrugarh</button>
+      <button class="city" data-lat="26.7509" data-lon="94.2037">Jorhat</button>
+      <button class="city" data-lat="26.6338" data-lon="92.7936">Tezpur</button>
+      <button class="city" data-lat="24.8333" data-lon="92.7789">Silchar</button>
+      <button class="city ghost" id="reset-view">Whole state</button>
     </div>
 
     <div id="status" role="status" aria-live="polite">Starting…</div>
     <div id="label" hidden><span class="dot"></span><b id="label-v">Predicting…</b></div>
   </main>
 
-  <aside id="bpanel" hidden aria-label="Selection">
+  <aside id="bpanel" hidden aria-label="Selected building">
     <header>
       <div>
-        <div class="eyebrow" id="beyebrow">State</div>
-        <h2 id="btitle">Select a state</h2>
+        <div class="eyebrow">Building</div>
+        <h2 id="btitle">Selected building</h2>
       </div>
       <button class="x" id="bclose" aria-label="Close panel">×</button>
     </header>
     <div id="bfacts" class="facts"></div>
-    <p id="stateNote" hidden></p>
-    <div id="bigList" class="biglist"></div>
     <div class="badge" id="bbadge" hidden>
       <div class="k">Predicted damage grade <span class="spin" id="bspin"></span></div>
       <div class="v" id="bbadge-v">Calculating…</div>
@@ -308,6 +272,6 @@
 </div>
 
 <script type="module" src="/static/assam3d/examples.js"></script>
-<script type="module" src="/static/india/india.js"></script>
+<script type="module" src="/static/assam3d/viewer.js"></script>
 </body>
 </html>

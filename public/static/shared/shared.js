@@ -15,6 +15,46 @@ const NUMERIC = [
 ];
 const CHOICES = ['land_surface_condition', 'ground_floor_type', 'roof_type', 'foundation_type'];
 
+// The survey answers arrive as bare letters (t, r, n, v, …) because that is what the model
+// was trained on. Nobody should have to read a codebook to use the form, so each choice is
+// shown as words with the raw code in brackets.
+//
+// Where the survey's own key is public, these are its category names (land surface: flat /
+// moderate slope / steep slope; foundation: mud mortar, cement, RC, other, wood; roof:
+// bamboo or timber heavy / light, RCC; ground floor: mud, brick/stone, RC, timber, other).
+// Where the letter-to-category pairing is not published, the wording follows what the code
+// actually contains in the 290,000 surveyed buildings — codes whose buildings have
+// reinforced-concrete walls are called reinforced concrete, codes dominated by mud-mortar
+// walls are called mud mortar. The code in brackets is the authoritative part.
+export const VALUE_LABELS = {
+  land_surface_condition: {
+    t: 'Flat ground',                    // 85% of records
+    n: 'Gentle slope',                   // 13%
+    o: 'Steep slope',                    // 2%
+  },
+  foundation_type: {
+    r: 'Mud mortar · stone or brick',    // 82% of records
+    i: 'Reinforced concrete',
+    u: 'Other foundation',
+    w: 'Timber or bamboo posts',
+    h: 'Adobe / mud',
+  },
+  roof_type: {
+    n: 'Bamboo or timber, heavier',      // 64% of records
+    q: 'Bamboo or timber, lighter',      // 27%
+    x: 'RCC / reinforced concrete',      // 9%
+  },
+  ground_floor_type: {
+    f: 'Mud',                            // 79% of records
+    v: 'Reinforced concrete',
+    x: 'Timber or bamboo',
+    z: 'Brick or stone',
+    m: 'Other',
+  },
+};
+
+export const valueLabel = (field, value) => VALUE_LABELS[field]?.[value] || String(value);
+
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) =>
   ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
@@ -37,8 +77,13 @@ export function buildControls(root, options, onChange) {
   }).join('');
   const choiceHTML = CHOICES.map((name) => {
     const f = by[name];
+    const opts = f.values.map((v) => {
+      const label = valueLabel(name, v);
+      const selected = String(v) === String(f.default) ? ' selected' : '';
+      return `<option value="${esc(v)}"${selected}>${esc(label)} (${esc(v)})</option>`;
+    }).join('');
     return `<div class="ctl sel"><label><span>${esc(f.label)}</span></label>
-      <select name="${name}">${f.values.map((v) => `<option value="${esc(v)}"${String(v) === String(f.default) ? ' selected' : ''}>${esc(v)}</option>`).join('')}</select></div>`;
+      <select name="${name}">${opts}</select></div>`;
   }).join('');
   const matHTML = materials.map((f) => `<label class="chip"><input type="checkbox" name="${f.name}" value="1"${Number(f.default) === 1 ? ' checked' : ''}><span>${esc(f.label.replace('Has superstructure ', ''))}</span></label>`).join('');
 
@@ -46,7 +91,9 @@ export function buildControls(root, options, onChange) {
     <fieldset class="grp"><legend>Building</legend>${numHTML}</fieldset>
     <fieldset class="grp"><legend>Site and construction</legend>${choiceHTML}</fieldset>
     <fieldset class="grp"><legend>Structural materials (tick all that apply)</legend><div class="chips">${matHTML}</div></fieldset>
-    <p class="fine">Location IDs are fixed to dataset defaults, and so are the less common fields. Survey location IDs cannot be derived from coordinates.</p>`;
+    <p class="fine">The survey records these answers as letters, so each choice is shown in words with its
+    code in brackets — the code is what the model sees. Location IDs are fixed to dataset defaults, and so are
+    the less common fields: survey location IDs cannot be derived from coordinates.</p>`;
 
   const read = () => {
     const p = { ...defaults };
